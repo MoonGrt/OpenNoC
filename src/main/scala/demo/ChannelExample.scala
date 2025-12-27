@@ -45,3 +45,7 @@ class ChannelExample extends Module {
   val outputFlit = Wire(Decoupled(new Flit(config)))
   outputFlit <> wireChannel.io.out
 }
+
+// object ChannelExample extends App {
+//   (new chisel3.stage.ChiselStage).emitVerilog(new ChannelExample, Array("--target-dir", "rtl"))
+// }

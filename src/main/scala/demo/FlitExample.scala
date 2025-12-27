@@ -27,21 +27,21 @@ class FlitExample extends Module {
     config = config,
     srcId = 0.U,
     dstId = 5.U,
-    data = 0x12345678.U,
+    data = "h12345678".U(32.W),
     vcId = 0.U
   )
 
   // Example 2: Create a body flit
   val bodyFlit = Flit.body(
     config = config,
-    data = 0xABCDEF00.U,
+    data = "hABCDEF00".U(32.W),
     vcId = 0.U
   )
 
   // Example 3: Create a tail flit
   val tailFlit = Flit.tail(
     config = config,
-    data = 0xFFFFFFFF.U,
+    data = "hFFFFFFFF".U(32.W),
     vcId = 0.U
   )
 
@@ -50,7 +50,7 @@ class FlitExample extends Module {
     config = config,
     srcId = 0.U,
     dstId = 5.U,
-    data = 0xDEADBEEF.U,
+    data = "hDEADBEEF".U(32.W),
     vcId = 0.U
   )
 
@@ -72,7 +72,8 @@ class FlitExample extends Module {
     config = config,
     srcId = 0.U,
     dstId = 5.U,
-    data = 0xCAFEBABE.U,
+    data = "hCAFEBABE".U(32.W),
     vcId = 0.U
   )
 }
+

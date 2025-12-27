@@ -23,4 +23,9 @@ class RouterIO(val config: NoCConfig) extends Bundle {
 
   // Optional congestion information (for adaptive routing)
   val congestionInfo = Input(Vec(config.totalPorts, UInt(8.W)))  // Congestion level for each port
+  // val congestionInfo = if (config.routingType == "Adaptive") {  // Congestion level for each port
+  //   Some(Input(Vec(config.totalPorts, UInt(8.W))))
+  // } else {
+  //   None
+  // }
 }

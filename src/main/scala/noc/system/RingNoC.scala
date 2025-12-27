@@ -2,13 +2,11 @@ package noc.system
 
 import chisel3._
 import chisel3.util._
-import chisel3.stage._
 import noc.config.NoCConfig
 import noc.router.{Router, RouterBuilder, RouterIO}
 import noc.ni.{NetworkInterface, StreamNI}
 import noc.topology.{NoCTopology, RingTopology}
-import noc.routing.RoutingPolicy
-import noc.routing.DeterministicRouting
+import noc.routing.{RoutingPolicy, RingRouting}
 
 /**
  * RingNoC - Ring NoC system
@@ -21,34 +19,6 @@ class RingNoC(config: NoCConfig, val numNodes: Int) extends NoC(config) {
 
   // Create topology
   val topology = new RingTopology(config, numNodes)
-
-  // Create simple routing policy (ring routing)
-  class RingRouting(config: NoCConfig, numNodes: Int) extends DeterministicRouting(config) {
-    override def getPossiblePorts(currentId: UInt, destId: UInt): chisel3.Vec[chisel3.Bool] = {
-      val possiblePorts = Wire(Vec(config.totalPorts, Bool()))
-
-      for (i <- 0 until config.totalPorts) {
-        possiblePorts(i) := false.B
-      }
-
-      val current = currentId
-      val dest = destId
-      val diff = (dest - current + numNodes.U) % numNodes.U
-
-      when(diff === 0.U) {
-        // Reached destination
-        possiblePorts(noc.config.Port.Local.id) := true.B
-      }.elsewhen(diff <= (numNodes / 2).U) {
-        // Clockwise direction
-        possiblePorts(noc.config.Port.East.id) := true.B
-      }.otherwise {
-        // Counter-clockwise direction
-        possiblePorts(noc.config.Port.West.id) := true.B
-      }
-
-      possiblePorts
-    }
-  }
 
   // Create routers
   val routingPolicy: RoutingPolicy = new RingRouting(config, numNodes)
@@ -94,25 +64,28 @@ class RingNoCExample extends Module {
     flitWidth = 32,
     vcNum = 1,           // Single virtual channel
     bufferDepth = 8,     // Larger buffer for ring topology
-    nodeIdWidth = 6,     // Support up to 64 nodes
+    nodeIdWidth = 2,     // Support up to 4 nodes
     numPorts = 2,        // 2 ports (East, West) + Local
     routingType = "Ring",
     topologyType = "Ring"
   )
 
-  // Create a Ring NoC with 8 nodes
-  val ringNoC = Module(new RingNoC(config, numNodes = 8))
+  // Create a Ring NoC with 4 nodes
+  val ringNoC = Module(new RingNoC(config, numNodes = 4))
+  println("Create a Ring NoC with 4 nodes")
 
   // Access network interfaces
   val nis = ringNoC.getNetworkInterfaces
+  println("Access network interfaces")
 
   // Example: Access all network interfaces
-  for (i <- 0 until 8) {
+  for (i <- 0 until 4) {
     val ni = nis(i)
     // Connect your processing elements here
+    println(s"Network Interface $i connected")
   }
 }
 
-object RingNoCExample extends App {
-  (new ChiselStage).emitVerilog(new RingNoCExample, Array("--target-dir", "rtl"))
-}
+// object RingNoCExample extends App {
+//   (new chisel3.stage.ChiselStage).emitVerilog(new RingNoCExample, Array("--target-dir", "rtl"))
+// }

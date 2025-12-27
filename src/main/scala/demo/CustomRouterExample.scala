@@ -48,3 +48,8 @@ class CustomRouterExample extends Module {
   customRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
   directRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
 }
+
+// object CustomRouterExample extends App {
+//   (new chisel3.stage.ChiselStage).emitVerilog(new CustomRouterExample, Array("--target-dir", "rtl"))
+// }
+

@@ -89,3 +89,8 @@ class CompleteExample extends Module {
     pes(i).io.start := false.B
   }
 }
+
+// object CompleteExample extends App {
+//   (new chisel3.stage.ChiselStage).emitVerilog(new CompleteExample, Array("--target-dir", "rtl"))
+// }
+

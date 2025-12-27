@@ -27,7 +27,6 @@ class Flit(val config: NoCConfig) extends Bundle {
   val srcId    = UInt(config.nodeIdWidth.W)  // Source node ID
   val dstId    = UInt(config.nodeIdWidth.W)  // Destination node ID
   val data     = UInt(config.flitWidth.W)  // Data
-  val valid    = Bool()  // Valid signal
 
   /**
    * Check if this is a head flit
@@ -61,7 +60,6 @@ object Flit {
     flit.srcId := srcId
     flit.dstId := dstId
     flit.data := data
-    flit.valid := true.B
     flit
   }
 
@@ -75,7 +73,6 @@ object Flit {
     flit.srcId := 0.U
     flit.dstId := 0.U
     flit.data := data
-    flit.valid := true.B
     flit
   }
 
@@ -89,7 +86,6 @@ object Flit {
     flit.srcId := 0.U
     flit.dstId := 0.U
     flit.data := data
-    flit.valid := true.B
     flit
   }
 
@@ -103,7 +99,6 @@ object Flit {
     flit.srcId := srcId
     flit.dstId := dstId
     flit.data := data
-    flit.valid := true.B
     flit
   }
 
@@ -117,7 +112,6 @@ object Flit {
     flit.srcId := 0.U
     flit.dstId := 0.U
     flit.data := 0.U
-    flit.valid := false.B
     flit
   }
 }

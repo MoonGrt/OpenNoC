@@ -2,7 +2,6 @@ package noc.system
 
 import chisel3._
 import chisel3.util._
-import chisel3.stage._
 import noc.config.NoCConfig
 import noc.router.{Router, RouterBuilder, RouterIO}
 import noc.ni.{NetworkInterface, StreamNI}
@@ -52,6 +51,8 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
 
   override def getTopology: NoCTopology = topology
 }
+
+
 /**
  * MeshNoCExample - Example of creating a 2D Mesh NoC
  *
@@ -65,16 +66,16 @@ class MeshNoCExample extends Module {
   val config = NoCConfig(
     dataWidth = 32,
     flitWidth = 32,
-    vcNum = 2,           // 2 virtual channels
+    vcNum = 2,            // 2 virtual channels
     bufferDepth = 4,      // Buffer depth of 4
-    nodeIdWidth = 8,      // Support up to 256 nodes
+    nodeIdWidth = 2,      // Support up to 4 nodes
     numPorts = 4,         // 4 ports (North, South, East, West) + Local
     routingType = "XY",
     topologyType = "Mesh"
   )
 
-  // Create a 4x4 Mesh NoC (16 nodes)
-  val meshNoC = Module(new MeshNoC(config, width = 4, height = 4))
+  // Create a 4x4 Mesh NoC (4 nodes)
+  val meshNoC = Module(new MeshNoC(config, width = 2, height = 2))
 
   // Access network interfaces
   val nis = meshNoC.getNetworkInterfaces
@@ -82,8 +83,8 @@ class MeshNoCExample extends Module {
   // Example: Connect to node 0's network interface
   val node0NI = nis(0)
 
-  // Example: Connect to node 15's network interface (last node)
-  val node15NI = nis(15)
+  // Example: Connect to node 3's network interface (last node)
+  val node15NI = nis(3)
 
   // You can now connect your processing elements to the network interfaces
   // For example:
@@ -93,5 +94,5 @@ class MeshNoCExample extends Module {
 }
 
 // object MeshNoCExample extends App {
-//   (new ChiselStage).emitVerilog(new MeshNoCExample, Array("--target-dir", "rtl"))
+//   (new chisel3.stage.ChiselStage).emitVerilog(new MeshNoCExample, Array("--target-dir", "rtl"))
 // }

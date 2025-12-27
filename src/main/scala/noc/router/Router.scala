@@ -43,11 +43,9 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
     val availablePorts = VecInit(io.outPorts.map(_.ready))
 
     // Compute routing decision (only compute for head flit, body and tail flits use previous routing decision)
-    val isHeadFlit = flit.isHead
     val routeDecision = routingPolicy.route(io.routerId, flit.dstId, availablePorts)
-
     routeDecisions(port) := routeDecision
-    routeValids(port) := hasFlit && isHeadFlit
+    routeValids(port) := hasFlit && flit.isHead
   }
 
   // Switch fabric: implemented using Crossbar

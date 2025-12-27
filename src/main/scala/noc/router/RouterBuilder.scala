@@ -32,4 +32,3 @@ object RouterBuilder {
     Module(new Router(config, routingPolicy))
   }
 }
-
