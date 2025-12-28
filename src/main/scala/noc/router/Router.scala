@@ -6,7 +6,7 @@ import noc.data.Flit
 import noc.config.{NoCConfig, Port}
 import noc.routing.RoutingPolicy
 import noc.switch.{SwitchFabric, Crossbar}
-import noc.channel.BufferedChannel
+import noc.channel.UniBufferedChannel
 
 /**
  * Router - Router
@@ -20,9 +20,7 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
 
   // Input buffers: create buffers for each input port and each VC
   val inputBuffers = Seq.fill(config.totalPorts) {
-    Seq.fill(config.vcNum) {
-      Module(new BufferedChannel(config, config.bufferDepth))
-    }
+    Seq.fill(config.vcNum) { Module(new UniBufferedChannel(config, config.bufferDepth)) }
   }
 
   // Connect input ports to buffers

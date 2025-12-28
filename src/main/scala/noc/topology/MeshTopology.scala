@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import noc.config.{NoCConfig, Port}
 import noc.router.RouterIO
-import noc.channel.{NoCChannel, PipelineChannel}
+import noc.channel.{BiNoCChannel, BiPipelineChannel}
 
 /**
  * MeshTopology - 2D Mesh topology
@@ -79,55 +79,60 @@ class MeshTopology(config: NoCConfig, val width: Int, val height: Int) extends N
   override def connectRouters(routers: Seq[RouterIO]): Unit = {
     require(routers.length == numNodes, s"Expected ${numNodes} routers, got ${routers.length}")
 
+    /*************************************************
+     * 1. Default: Disable all Mesh direction ports (for edge routers)
+     *************************************************/
+    for (r <- routers) {
+      for (p <- Port.directions) { // East/West/North/South
+        // inPorts: Without upstream, never valid
+        r.inPorts(p.id).valid := false.B
+        r.inPorts(p.id).bits  := 0.U.asTypeOf(r.inPorts(p.id).bits)
+        // outPorts: No downstream, ready is always false
+        r.outPorts(p.id).ready := false.B
+      }
+    }
+
+    /*************************************************
+     * 2. Establish a channel connection between adjacent routers in the mesh network.
+     *************************************************/
     // Create channel connections
-    val channels = collection.mutable.Map[(Int, Int), NoCChannel]()
+    val channels = collection.mutable.Map[(Int, Int), BiNoCChannel]()
 
     // Connect all adjacent routers
     for (nodeId <- 0 until numNodes) {
       val neighbors = getNeighbors(nodeId)
 
-      for ((neighborId, port) <- neighbors) {
-        val channelKey = if (nodeId < neighborId) (nodeId, neighborId) else (neighborId, nodeId)
+      for ((neighborId, _) <- neighbors) {
+        // Undirected physical edge key
+        val channelKey =
+          if (nodeId < neighborId) (nodeId, neighborId)
+          else (neighborId, nodeId)
 
+        // If this edge has already been processed, skip it directly.
         if (!channels.contains(channelKey)) {
-          val channel = Module(new PipelineChannel(config))
+          val channel = Module(new BiPipelineChannel(config))
           channels(channelKey) = channel
-
-          // Determine connection direction
-          if (nodeId < neighborId) {
-            // nodeId -> neighborId
-            val (srcPort, dstPort) = getConnection(nodeId, neighborId) match {
+          val (a, b) = channelKey
+          // a -> b
+          val (aOut, bIn) =
+            getConnection(a, b) match {
               case Some(p) => (p, Port.opposite(p))
-              case None => throw new IllegalArgumentException("Invalid connection")
+              case None    => throw new IllegalArgumentException("Invalid connection")
+            }
+          // b -> a
+          val (bOut, aIn) =
+            getConnection(b, a) match {
+              case Some(p) => (p, Port.opposite(p))
+              case None    => throw new IllegalArgumentException("Invalid connection")
             }
 
-            channel.io.in <> routers(nodeId).outPorts(srcPort.id)
-            routers(neighborId).inPorts(dstPort.id) <> channel.io.out
-          } else {
-            // neighborId -> nodeId
-            val (srcPort, dstPort) = getConnection(neighborId, nodeId) match {
-              case Some(p) => (p, Port.opposite(p))
-              case None => throw new IllegalArgumentException("Invalid connection")
-            }
-
-            channel.io.in <> routers(neighborId).outPorts(srcPort.id)
-            routers(nodeId).inPorts(dstPort.id) <> channel.io.out
-          }
-        } else {
-          // Other end of bidirectional connection
-          val channel = channels(channelKey)
-          val (srcPort, dstPort) = getConnection(nodeId, neighborId) match {
-            case Some(p) => (p, Port.opposite(p))
-            case None => throw new IllegalArgumentException("Invalid connection")
-          }
-
-          if (nodeId < neighborId) {
-            channel.io.in <> routers(nodeId).outPorts(srcPort.id)
-            routers(neighborId).inPorts(dstPort.id) <> channel.io.out
-          } else {
-            channel.io.in <> routers(neighborId).outPorts(srcPort.id)
-            routers(nodeId).inPorts(dstPort.id) <> channel.io.out
-          }
+          // ===== Bidirectional connection =====
+          // a → b
+          routers(a).outPorts(aIn.id) <> channel.io.rx.in
+          channel.io.rx.out <> routers(b).inPorts(bOut.id)
+          // b → a
+          routers(b).outPorts(bIn.id) <> channel.io.tx.in
+          channel.io.tx.out <> routers(a).inPorts(aOut.id)
         }
       }
     }

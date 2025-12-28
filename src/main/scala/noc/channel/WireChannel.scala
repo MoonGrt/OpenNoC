@@ -10,6 +10,10 @@ import noc.config.NoCConfig
  * Directly connects input to output, no delay, no buffering
  * Suitable for combinational logic connections
  */
-class WireChannel(config: NoCConfig) extends NoCChannel(config) {
+class UniWireChannel(config: NoCConfig) extends UniNoCChannel(config) {
   io.out <> io.in
+}
+class BiWireChannel(config: NoCConfig) extends BiNoCChannel(config) {
+  io.tx.out <> io.tx.in
+  io.rx.out <> io.rx.in
 }

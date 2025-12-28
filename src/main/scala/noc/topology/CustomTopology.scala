@@ -39,16 +39,16 @@ class CustomTopology(
   override def connectRouters(routers: Seq[RouterIO]): Unit = {
     require(routers.length == numNodes, s"Expected ${numNodes} routers, got ${routers.length}")
 
-    import noc.channel.PipelineChannel
+    import noc.channel.UniPipelineChannel
 
     // Create channel for each connection pair
-    val channelMap = collection.mutable.Map[(Int, Int), PipelineChannel]()
+    val channelMap = collection.mutable.Map[(Int, Int), UniPipelineChannel]()
 
     for ((srcId, dstId, srcPort, dstPort) <- connections) {
       val key = (srcId, dstId)
 
       if (!channelMap.contains(key)) {
-        val channel = Module(new PipelineChannel(config))
+        val channel = Module(new UniPipelineChannel(config))
         channelMap(key) = channel
 
         channel.io.in <> routers(srcId).outPorts(srcPort)

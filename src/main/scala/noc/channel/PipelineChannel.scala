@@ -11,7 +11,7 @@ import noc.config.NoCConfig
  *
  * @param config NoC configuration
  */
-class PipelineChannel(config: NoCConfig) extends NoCChannel(config) {
+class UniPipelineChannel(config: NoCConfig) extends UniNoCChannel(config) {
   val flitReg = Reg(new Flit(config))
   val validReg = RegInit(false.B)
 
@@ -24,4 +24,30 @@ class PipelineChannel(config: NoCConfig) extends NoCChannel(config) {
   io.in.ready := io.out.ready || !validReg
   io.out.bits := flitReg
   io.out.valid := validReg
+}
+class BiPipelineChannel(config: NoCConfig) extends BiNoCChannel(config) {
+  // tx
+  val txflitReg = Reg(new Flit(config))
+  val txvalidReg = RegInit(false.B)
+  // rx
+  val rxflitReg = Reg(new Flit(config))
+  val rxvalidReg = RegInit(false.B)
+
+  // Can receive new data when output is ready or invalid
+  // tx
+  when(io.tx.out.ready || !txvalidReg) {
+    txflitReg := io.tx.in.bits
+    txvalidReg := io.tx.in.valid
+  }
+  io.tx.in.ready := io.tx.out.ready || !txvalidReg
+  io.tx.out.bits := txflitReg
+  io.tx.out.valid := txvalidReg
+  // rx
+  when(io.rx.out.ready || !rxvalidReg) {
+    rxflitReg := io.rx.in.bits
+    rxvalidReg := io.rx.in.valid
+  }
+  io.rx.in.ready := io.rx.out.ready || !rxvalidReg
+  io.rx.out.bits := rxflitReg
+  io.rx.out.valid := rxvalidReg
 }

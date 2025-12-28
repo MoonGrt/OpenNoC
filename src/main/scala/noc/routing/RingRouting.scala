@@ -41,37 +41,37 @@ class RingRouting(config: NoCConfig, numNodes: Int) extends DeterministicRouting
 /**
   * RingRoutingGen - Generates Verilog for RingRouting Router
   */
-import noc.router.Router
+// import noc.router.Router
 
-object RingRoutingGen extends App {
-  // ------------------------------------------------------------
-  // 1. Creating NoC configuration
-  // ------------------------------------------------------------
-  val config = NoCConfig(
-    dataWidth    = 32,
-    flitWidth    = 32,
-    vcNum        = 1,  // Single virtual channel
-    bufferDepth  = 4,  // Larger buffer for ring topology
-    nodeIdWidth  = 2,  // Support up to 4 nodes
-    numPorts     = 2,  // Ring: East + West
-    routingType  = "Ring",
-    topologyType = "Ring"
-  )
+// object RingRoutingGen extends App {
+//   // ------------------------------------------------------------
+//   // 1. Creating NoC configuration
+//   // ------------------------------------------------------------
+//   val config = NoCConfig(
+//     dataWidth    = 32,
+//     flitWidth    = 32,
+//     vcNum        = 1,  // Single virtual channel
+//     bufferDepth  = 4,  // Larger buffer for ring topology
+//     nodeIdWidth  = 2,  // Support up to 4 nodes
+//     numPorts     = 2,  // Ring: East + West
+//     routingType  = "Ring",
+//     topologyType = "Ring"
+//   )
 
-  // ------------------------------------------------------------
-  // 2. Creating routing policy
-  // ------------------------------------------------------------
-  val numNodes = 4
-  val routingPolicy = new RingRouting(config, numNodes)
+//   // ------------------------------------------------------------
+//   // 2. Creating routing policy
+//   // ------------------------------------------------------------
+//   val numNodes = 4
+//   val routingPolicy = new RingRouting(config, numNodes)
 
-  // ------------------------------------------------------------
-  // 3. Generating Verilog
-  // ------------------------------------------------------------
-  (new chisel3.stage.ChiselStage).emitVerilog(
-    new Router(config, routingPolicy),
-    Array(
-      "--target-dir", "rtl",
-      "--emission-options=disableMemRandomization,disableRegisterRandomization"
-    )
-  )
-}
+//   // ------------------------------------------------------------
+//   // 3. Generating Verilog
+//   // ------------------------------------------------------------
+//   (new chisel3.stage.ChiselStage).emitVerilog(
+//     new Router(config, routingPolicy),
+//     Array(
+//       "--target-dir", "rtl",
+//       "--emission-options=disableMemRandomization,disableRegisterRandomization"
+//     )
+//   )
+// }

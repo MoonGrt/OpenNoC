@@ -16,8 +16,14 @@ import noc.topology.{NoCTopology, MeshTopology}
  */
 class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(config) {
   require(width > 0 && height > 0, "Mesh dimensions must be positive")
-
   val numNodes = width * height
+
+  val io = IO(new Bundle {
+    val nodeId = Output(Vec(numNodes, UInt(config.nodeIdWidth.W)))
+    val destId = Input(Vec(numNodes, UInt(config.nodeIdWidth.W)))
+    val streamIn  = Flipped(Vec(numNodes, Decoupled(UInt(config.flitWidth.W))))
+    val streamOut = Vec(numNodes, Decoupled(UInt(config.flitWidth.W)))
+  })
 
   // Create topology
   val topology = new MeshTopology(config, width, height)
@@ -45,6 +51,13 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
   // Connect routers (through topology)
   topology.connectRouters(routers.map(_.io))
 
+  for (i <- 0 until numNodes) {
+    io.nodeId(i)    <> networkInterfaces(i).io.nodeId
+    io.destId(i)    <> networkInterfaces(i).io.destId
+    io.streamIn(i)  <> networkInterfaces(i).io.streamIn
+    io.streamOut(i) <> networkInterfaces(i).io.streamOut
+  }
+
   override def getNetworkInterfaces: Seq[StreamNI] = networkInterfaces  // StreamNI instead of NetworkInterface
 
   override def getRouters: Seq[Router] = routers
@@ -61,38 +74,46 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
  * 2. Instantiate a Mesh NoC system
  * 3. Access network interfaces for communication
  */
+import noc.pe.{RandomSourceStreamNI, FlitSinkStreamNI}
+
 class MeshNoCGen extends Module {
   // Create NoC configuration
   val config = NoCConfig(
-    dataWidth = 32,
-    flitWidth = 32,
-    vcNum = 2,            // 2 virtual channels
-    bufferDepth = 4,      // Buffer depth of 4
-    nodeIdWidth = 2,      // Support up to 4 nodes
-    numPorts = 4,         // 4 ports (North, South, East, West) + Local
-    routingType = "XY",
+    dataWidth    = 32,
+    flitWidth    = 32,
+    vcNum        = 1,  // 1 virtual channels
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
+    numPorts     = 4,  // 4 ports (North, South, East, West) + Local
+    routingType  = "XY",
     topologyType = "Mesh"
   )
 
-  // Create a 4x4 Mesh NoC (4 nodes)
+  // Create a 2x2 Mesh NoC (4 nodes)
   val meshNoC = Module(new MeshNoC(config, width = 2, height = 2))
 
-  // Access network interfaces
-  val nis = meshNoC.getNetworkInterfaces
+  // Example
+  // Connect processing elements to network interfaces
+  for (i <- 0 until 2) {
+    // Create processing elements
+    val source = Module(new RandomSourceStreamNI(config))
+    val sink = Module(new FlitSinkStreamNI(config))
 
-  // Example: Connect to node 0's network interface
-  val node0NI = nis(0)
+    // Connect processing elements to network interfaces
+    source.io.enable := true.B
+    source.io.seed := 7.U(config.dataWidth.W)
+    source.io.nodeId <> meshNoC.io.nodeId(i)
+    source.io.destId <> meshNoC.io.destId(i)
+    source.io.streamOut <> meshNoC.io.streamIn(i)
+    source.io.streamIn <> meshNoC.io.streamOut(i)
 
-  // Example: Connect to node 3's network interface (last node)
-  val node15NI = nis(3)
-
-  // You can now connect your processing elements to the network interfaces
-  // For example:
-  //   node0NI.io.streamIn <> yourPE0.io.dataOut
-  //   yourPE0.io.dataIn <> node0NI.io.streamOut
-  //   node0NI.io.destId := yourPE0.io.destId
+    sink.io.nodeId <> meshNoC.io.nodeId(i+2)
+    sink.io.destId <> meshNoC.io.destId(i+2)
+    sink.io.streamIn <> meshNoC.io.streamOut(i+2)
+    sink.io.streamOut <> meshNoC.io.streamIn(i+2)
+  }
 }
 
-// object MeshNoCGen extends App {
-//   (new chisel3.stage.ChiselStage).emitVerilog(new MeshNoCGen, Array("--target-dir", "rtl"))
-// }
+object MeshNoCGen extends App {
+  (new chisel3.stage.ChiselStage).emitVerilog(new MeshNoCGen, Array("--target-dir", "rtl"))
+}

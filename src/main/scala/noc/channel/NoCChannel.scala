@@ -6,18 +6,28 @@ import noc.data.Flit
 import noc.config.NoCConfig
 
 /**
- * NoCChannel - Base interface for NoC channels
- * Defines the channel interface for connecting two components in NoC
+ * Unidirectional Channel Bundle
  */
-class NoCChannelIO(val config: NoCConfig) extends Bundle {
-  val in = Flipped(Decoupled(new Flit(config)))
+class UniChannel(val config: NoCConfig) extends Bundle {
+  val in  = Flipped(Decoupled(new Flit(config)))
   val out = Decoupled(new Flit(config))
+}
+
+/**
+ * Bidirectional Channel Bundle
+ */
+class BiChannel(val config: NoCConfig) extends Bundle {
+  val tx = new UniChannel(config)
+  val rx = new UniChannel(config)
 }
 
 /**
  * NoCChannel - Abstract base class for channels
  * All channel implementations should extend this class
  */
-abstract class NoCChannel(val config: NoCConfig) extends Module {
-  val io = IO(new NoCChannelIO(config))
+abstract class UniNoCChannel(val config: NoCConfig) extends Module {
+  val io = IO(new UniChannel(config))
+}
+abstract class BiNoCChannel(val config: NoCConfig) extends Module {
+  val io = IO(new BiChannel(config))
 }

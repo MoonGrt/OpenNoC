@@ -12,11 +12,22 @@ import noc.config.NoCConfig
  * @param config NoC configuration
  * @param depth Buffer depth
  */
-class BufferedChannel(config: NoCConfig, depth: Int = 4) extends NoCChannel(config) {
+class UniBufferedChannel(config: NoCConfig, depth: Int = 4) extends UniNoCChannel(config) {
   require(depth > 0, "Buffer depth must be positive")
 
   val queue = Module(new Queue(new Flit(config), depth, pipe = false, flow = false))
 
   queue.io.enq <> io.in
   queue.io.deq <> io.out
+}
+class BiBufferedChannel(config: NoCConfig, depth: Int = 4) extends BiNoCChannel(config) {
+  require(depth > 0, "Buffer depth must be positive")
+  // tx
+  val queue1 = Module(new Queue(new Flit(config), depth, pipe = false, flow = false))
+  queue1.io.enq <> io.tx.in
+  queue1.io.deq <> io.tx.out
+  // rx
+  val queue2 = Module(new Queue(new Flit(config), depth, pipe = false, flow = false))
+  queue2.io.enq <> io.rx.in
+  queue2.io.deq <> io.rx.out
 }
