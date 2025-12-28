@@ -46,17 +46,23 @@ class RingTopology(config: NoCConfig, override val numNodes: Int) extends NoCTop
     require(routers.length == numNodes, s"Expected ${numNodes} routers, got ${routers.length}")
 
     // Create channel connections
-    val channels = Seq.fill(numNodes) {
+    val channels1 = Seq.fill(numNodes) {  // Create channels from input to output
+      Module(new PipelineChannel(config))
+    }
+    val channels2 = Seq.fill(numNodes) {  // Create channels from output to input
       Module(new PipelineChannel(config))
     }
 
     // Connect into a ring
     for (i <- 0 until numNodes) {
       val next = (i + 1) % numNodes
-
       // i -> next (East direction)
-      channels(i).io.in <> routers(i).outPorts(Port.East.id)
-      routers(next).inPorts(Port.West.id) <> channels(i).io.out
+      routers(i).outPorts(Port.East.id) <> channels1(i).io.in
+      channels1(i).io.out <> routers(next).inPorts(Port.West.id)
+      routers(next).outPorts(Port.West.id) <> channels2(i).io.in
+      channels2(i).io.out <> routers(i).inPorts(Port.East.id)
+      // routers(next).inPorts(Port.West.id) <> routers(i).outPorts(Port.East.id)
+      // routers(next).outPorts(Port.West.id) <> routers(i).inPorts(Port.East.id)
     }
   }
 }

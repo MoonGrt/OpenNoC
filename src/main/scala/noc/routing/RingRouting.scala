@@ -39,33 +39,33 @@ class RingRouting(config: NoCConfig, numNodes: Int) extends DeterministicRouting
 }
 
 /**
-  * RingRoutingExample - Example usage of RingRouting
+  * RingRoutingGen - Generates Verilog for RingRouting Router
   */
 import noc.router.Router
 
-object RingRoutingExample extends App {
+object RingRoutingGen extends App {
   // ------------------------------------------------------------
-  // 1. 创建 NoC 配置
+  // 1. Creating NoC configuration
   // ------------------------------------------------------------
   val config = NoCConfig(
     dataWidth    = 32,
     flitWidth    = 32,
-    vcNum        = 1,
-    bufferDepth  = 4,
-    nodeIdWidth  = 8,
+    vcNum        = 1,  // Single virtual channel
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
     numPorts     = 2,  // Ring: East + West
     routingType  = "Ring",
     topologyType = "Ring"
   )
 
   // ------------------------------------------------------------
-  // 2. 创建路由策略
+  // 2. Creating routing policy
   // ------------------------------------------------------------
-  val numNodes = 8
+  val numNodes = 4
   val routingPolicy = new RingRouting(config, numNodes)
 
   // ------------------------------------------------------------
-  // 3. 生成 Verilog
+  // 3. Generating Verilog
   // ------------------------------------------------------------
   (new chisel3.stage.ChiselStage).emitVerilog(
     new Router(config, routingPolicy),

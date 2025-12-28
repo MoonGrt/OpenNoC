@@ -23,10 +23,8 @@ abstract class DeterministicRouting(config: NoCConfig) extends RoutingPolicy(con
     selected
   }
 
-  override def route(currentId: UInt, destId: UInt, availablePorts: Vec[Bool]): UInt = {
+  override def route(currentId: UInt, destId: UInt): UInt = {
     val possiblePorts = getPossiblePorts(currentId, destId)
-    // Only consider ports that are both possible and available
-    val validPorts = VecInit(possiblePorts.zip(availablePorts).map { case (p, a) => p && a })
-    selectPort(validPorts)
+    selectPort(possiblePorts)
   }
 }

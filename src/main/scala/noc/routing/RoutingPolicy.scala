@@ -13,10 +13,9 @@ abstract class RoutingPolicy(val config: NoCConfig) {
    * Compute routing decision
    * @param currentId Current node ID
    * @param destId Destination node ID
-   * @param availablePorts Available port list (Bool vector)
    * @return Selected output port index
    */
-  def route(currentId: UInt, destId: UInt, availablePorts: Vec[Bool]): UInt
+  def route(currentId: UInt, destId: UInt): UInt
 
   /**
    * Get all possible output ports

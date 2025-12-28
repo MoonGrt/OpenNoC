@@ -1,4 +1,4 @@
-package noc.sink
+package noc.pe
 
 import chisel3._
 import chisel3.util._
@@ -6,18 +6,25 @@ import noc.data.{Flit, Packet}
 import noc.config.NoCConfig
 
 /**
- * SinkIO - Base IO interface for sink components
+ * Sink(NI)IO - Base IO interface for sink components
  * Provides interface for receiving flits from NoC
  *
  * @param config NoC configuration
  */
 class SinkIO(val config: NoCConfig) extends Bundle {
   val flitIn = Flipped(Decoupled(new Flit(config)))
+  val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
   val nodeId = Input(UInt(config.nodeIdWidth.W))  // This node's ID
+}
+class SinkStreamNIIO(val config: NoCConfig) extends Bundle {
+  val streamIn = Flipped(Decoupled(UInt(config.dataWidth.W)))
+  val streamOut = Decoupled(UInt(config.dataWidth.W))  // Present but not used (valid = false)
+  val nodeId = Input(UInt(config.nodeIdWidth.W))  // This no`de's ID
+  val destId = Output(UInt(config.nodeIdWidth.W))  // Present but not used (valid = false)
 }
 
 /**
- * Sink - Abstract base class for sink components
+ * Sink(NI) - Abstract base class for sink components
  * Sinks receive and process data from the NoC network
  *
  * @param config NoC configuration
@@ -25,9 +32,12 @@ class SinkIO(val config: NoCConfig) extends Bundle {
 abstract class Sink(val config: NoCConfig) extends Module {
   // Subclasses define their own io bundles
 }
+abstract class SinkNI(val config: NoCConfig) extends Module {
+  // Subclasses define their own io bundles
+}
 
 /**
- * FlitSink - Basic flit sink
+ * FlitSink(NI) - Basic flit sink
  * Receives flits and outputs them through a stream interface
  *
  * @param config NoC configuration
@@ -35,19 +45,37 @@ abstract class Sink(val config: NoCConfig) extends Module {
 class FlitSink(config: NoCConfig) extends Sink(config) {
   val io = IO(new Bundle {
     val flitIn = Flipped(Decoupled(new Flit(config)))
+    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
-    val flitOut = Decoupled(new Flit(config))
   })
-  
-  // Simple pass-through: receive flit and make it available
-  val flitQueue = Module(new Queue(new Flit(config), config.bufferDepth))
-  
-  flitQueue.io.enq <> io.flitIn
-  io.flitOut <> flitQueue.io.deq
+
+  // flitOut is not used for sink - always invalid
+  io.flitOut.valid := false.B
+  io.flitOut.bits := DontCare
+
+  // Simple destroy flit input
+  io.flitIn.ready := true.B
+}
+class FlitSinkStreamNI(config: NoCConfig) extends SinkNI(config) {
+  val io = IO(new Bundle {
+    val streamIn = Flipped(Decoupled(UInt(config.dataWidth.W)))
+    val streamOut = Decoupled(UInt(config.dataWidth.W))  // Present but not used (valid = false)
+    val nodeId = Input(UInt(config.nodeIdWidth.W))
+    val destId = Output(UInt(config.nodeIdWidth.W))  // Present but not used (valid = false)
+  })
+
+  io.destId := io.nodeId
+
+  // streamOut is not used for sink - always invalid
+  io.streamOut.valid := false.B
+  io.streamOut.bits := DontCare
+
+  // Simple destroy stream input
+  io.streamIn.ready := true.B
 }
 
 /**
- * StreamSink - Stream data sink
+ * StreamSink(NI) - Stream data sink
  * Receives flits from NoC, unpacks them, and outputs as data stream
  *
  * @param config NoC configuration
@@ -55,17 +83,22 @@ class FlitSink(config: NoCConfig) extends Sink(config) {
 class StreamSink(config: NoCConfig) extends Sink(config) {
   val io = IO(new Bundle {
     val flitIn = Flipped(Decoupled(new Flit(config)))
+    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val dataOut = Decoupled(UInt(config.dataWidth.W))
   })
-  
+
+  // flitOut is not used for sink - always invalid
+  io.flitOut.valid := false.B
+  io.flitOut.bits := DontCare
+
   val recvQueue = Module(new Queue(UInt(config.dataWidth.W), config.bufferDepth))
   val recvState = RegInit(0.U(2.W))  // 0: waiting head, 1: receiving
-  
+
   io.flitIn.ready := false.B
   recvQueue.io.enq.valid := false.B
   recvQueue.io.enq.bits := DontCare
-  
+
   switch(recvState) {
     is(0.U) {
       // Wait for head flit
@@ -93,12 +126,12 @@ class StreamSink(config: NoCConfig) extends Sink(config) {
       }
     }
   }
-  
+
   io.dataOut <> recvQueue.io.deq
 }
 
 /**
- * PacketSink - Packet sink
+ * PacketSink(NI) - Packet sink
  * Receives flits and reassembles them into packets
  *
  * @param config NoC configuration
@@ -107,20 +140,25 @@ class StreamSink(config: NoCConfig) extends Sink(config) {
 class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
   val io = IO(new Bundle {
     val flitIn = Flipped(Decoupled(new Flit(config)))
+    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val packetOut = Decoupled(new Packet(config, maxFlits))
   })
-  
+
+  // flitOut is not used for sink - always invalid
+  io.flitOut.valid := false.B
+  io.flitOut.bits := DontCare
+
   val packetBuffer = Reg(Vec(maxFlits, new Flit(config)))
   val packetLength = RegInit(0.U(log2Ceil(maxFlits + 1).W))
   val recvState = RegInit(0.U(2.W))  // 0: waiting head, 1: receiving
   val packetValid = RegInit(false.B)
   val packetReady = Wire(Bool())
-  
+
   io.flitIn.ready := false.B
   io.packetOut.valid := false.B
   io.packetOut.bits := DontCare
-  
+
   switch(recvState) {
     is(0.U) {
       // Wait for head flit
@@ -128,7 +166,7 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
         packetBuffer(0) := io.flitIn.bits
         packetLength := 1.U
         io.flitIn.ready := true.B
-        
+
         when(io.flitIn.bits.isTail) {
           // Single-flit packet
           packetValid := true.B
@@ -144,7 +182,7 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
         packetBuffer(packetLength) := io.flitIn.bits
         packetLength := packetLength + 1.U
         io.flitIn.ready := true.B
-        
+
         when(io.flitIn.bits.isTail) {
           packetValid := true.B
           recvState := 0.U
@@ -152,16 +190,16 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
       }
     }
   }
-  
+
   // Output assembled packet
   when(packetValid && packetReady) {
     packetValid := false.B
     packetLength := 0.U
   }
-  
+
   packetReady := !packetValid || io.packetOut.ready
   io.packetOut.valid := packetValid
-  
+
   for (i <- 0 until maxFlits) {
     if (i == 0) {
       io.packetOut.bits.flits(i) := packetBuffer(0)
@@ -174,7 +212,7 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
 }
 
 /**
- * CounterSink - Counting sink
+ * CounterSink(NI) - Counting sink
  * Counts the number of received flits and packets
  *
  * @param config NoC configuration
@@ -182,17 +220,22 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
 class CounterSink(config: NoCConfig) extends Sink(config) {
   val io = IO(new Bundle {
     val flitIn = Flipped(Decoupled(new Flit(config)))
+    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val flitCount = Output(UInt(32.W))
     val packetCount = Output(UInt(32.W))
   })
-  
+
+  // flitOut is not used for sink - always invalid
+  io.flitOut.valid := false.B
+  io.flitOut.bits := DontCare
+
   val flitCounter = RegInit(0.U(32.W))
   val packetCounter = RegInit(0.U(32.W))
   val recvState = RegInit(0.U(2.W))  // Track if receiving a packet
-  
+
   io.flitIn.ready := true.B
-  
+
   when(io.flitIn.valid && io.flitIn.ready) {
     flitCounter := flitCounter + 1.U
     when(io.flitIn.bits.isHead) {
@@ -207,13 +250,13 @@ class CounterSink(config: NoCConfig) extends Sink(config) {
       recvState := 0.U
     }
   }
-  
+
   io.flitCount := flitCounter
   io.packetCount := packetCounter
 }
 
 /**
- * StatisticsSink - Statistics collecting sink
+ * StatisticsSink(NI) - Statistics collecting sink
  * Collects various statistics about received data
  *
  * @param config NoC configuration
@@ -221,6 +264,7 @@ class CounterSink(config: NoCConfig) extends Sink(config) {
 class StatisticsSink(config: NoCConfig) extends Sink(config) {
   val io = IO(new Bundle {
     val flitIn = Flipped(Decoupled(new Flit(config)))
+    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val flitCount = Output(UInt(32.W))
     val packetCount = Output(UInt(32.W))
@@ -229,7 +273,11 @@ class StatisticsSink(config: NoCConfig) extends Sink(config) {
     val tailFlitCount = Output(UInt(32.W))
     val bytesReceived = Output(UInt(64.W))
   })
-  
+
+  // flitOut is not used for sink - always invalid
+  io.flitOut.valid := false.B
+  io.flitOut.bits := DontCare
+
   val flitCounter = RegInit(0.U(32.W))
   val packetCounter = RegInit(0.U(32.W))
   val headFlitCounter = RegInit(0.U(32.W))
@@ -237,13 +285,13 @@ class StatisticsSink(config: NoCConfig) extends Sink(config) {
   val tailFlitCounter = RegInit(0.U(32.W))
   val bytesCounter = RegInit(0.U(64.W))
   val recvState = RegInit(0.U(2.W))
-  
+
   io.flitIn.ready := true.B
-  
+
   when(io.flitIn.valid && io.flitIn.ready) {
     flitCounter := flitCounter + 1.U
     bytesCounter := bytesCounter + (config.flitWidth / 8).U
-    
+
     when(io.flitIn.bits.isHead) {
       headFlitCounter := headFlitCounter + 1.U
       when(io.flitIn.bits.isTail) {
@@ -261,66 +309,11 @@ class StatisticsSink(config: NoCConfig) extends Sink(config) {
       }
     }
   }
-  
+
   io.flitCount := flitCounter
   io.packetCount := packetCounter
   io.headFlitCount := headFlitCounter
   io.bodyFlitCount := bodyFlitCounter
   io.tailFlitCount := tailFlitCounter
   io.bytesReceived := bytesCounter
-}
-
-/**
- * MemorySink - Memory-backed sink
- * Stores received data in a memory buffer
- *
- * @param config NoC configuration
- * @param bufferDepth Depth of the memory buffer
- */
-class MemorySink(config: NoCConfig, bufferDepth: Int = 256) extends Sink(config) {
-  val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val nodeId = Input(UInt(config.nodeIdWidth.W))
-    val dataOut = Output(Vec(bufferDepth, UInt(config.dataWidth.W)))
-    val writeAddr = Output(UInt(log2Ceil(bufferDepth).W))
-    val writeEn = Output(Bool())
-    val readAddr = Input(UInt(log2Ceil(bufferDepth).W))
-    val readData = Output(UInt(config.dataWidth.W))
-  })
-  
-  val memory = SyncReadMem(bufferDepth, UInt(config.dataWidth.W))
-  val writePtr = RegInit(0.U(log2Ceil(bufferDepth).W))
-  val recvState = RegInit(0.U(2.W))
-  
-  io.flitIn.ready := writePtr < (bufferDepth - 1).U  // Not full
-  
-  when(io.flitIn.valid && io.flitIn.ready) {
-    when(io.flitIn.bits.isHead) {
-      memory.write(writePtr, io.flitIn.bits.data)
-      writePtr := writePtr + 1.U
-      when(io.flitIn.bits.isTail) {
-        // Single-flit packet done
-      }.otherwise {
-        recvState := 1.U
-      }
-    }.elsewhen(recvState === 1.U) {
-      memory.write(writePtr, io.flitIn.bits.data)
-      writePtr := writePtr + 1.U
-      when(io.flitIn.bits.isTail) {
-        recvState := 0.U
-      }
-    }
-  }
-  
-  // Read port
-  io.readData := memory.read(io.readAddr)
-  
-  // Output current state
-  io.writeAddr := writePtr
-  io.writeEn := io.flitIn.valid && io.flitIn.ready
-  
-  // Output memory contents (for debugging/monitoring)
-  for (i <- 0 until bufferDepth) {
-    io.dataOut(i) := memory.read(i.U)
-  }
 }

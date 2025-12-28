@@ -22,9 +22,9 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
     val nodeId = Output(UInt(config.nodeIdWidth.W))
 
     // Stream interface
+    val destId = Input(UInt(config.nodeIdWidth.W))  // Destination node ID
     val streamIn = Flipped(Decoupled(UInt(config.dataWidth.W)))
     val streamOut = Decoupled(UInt(config.dataWidth.W))
-    val destId = Input(UInt(config.nodeIdWidth.W))  // Destination node ID
   })
 
   io.nodeId := nodeId.U(config.nodeIdWidth.W)
@@ -108,4 +108,29 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
   }
 
   io.streamOut <> recvQueue.io.deq
+}
+
+/**
+ * StreamNIGen - Stream network interface generator
+ *
+ */
+object StreamNIGen extends App {
+  val config = NoCConfig(
+    dataWidth    = 32,
+    flitWidth    = 32,
+    vcNum        = 1,  // Single virtual channel
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
+    numPorts     = 2,  // Ring: East + West
+    routingType  = "Ring",
+    topologyType = "Ring"
+  )
+
+  (new chisel3.stage.ChiselStage).emitVerilog(
+    new StreamNI(config, 0),
+    Array(
+      "--target-dir", "rtl",
+      "--emission-options=disableMemRandomization,disableRegisterRandomization"
+    )
+  )
 }

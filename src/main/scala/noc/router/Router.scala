@@ -39,11 +39,8 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
     val flit = inputBuffers(port)(0).io.out.bits
     val hasFlit = inputBuffers(port)(0).io.out.valid
 
-    // Get available output ports (check ready signals of output ports)
-    val availablePorts = VecInit(io.outPorts.map(_.ready))
-
     // Compute routing decision (only compute for head flit, body and tail flits use previous routing decision)
-    val routeDecision = routingPolicy.route(io.routerId, flit.dstId, availablePorts)
+    val routeDecision = routingPolicy.route(io.routerId, flit.dstId)
     routeDecisions(port) := routeDecision
     routeValids(port) := hasFlit && flit.isHead
   }

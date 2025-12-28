@@ -114,23 +114,20 @@ class AdaptiveXYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) exte
     possiblePorts
   }
 
-  override def route(currentId: UInt, destId: UInt, availablePorts: Vec[Bool]): UInt = {
+  override def route(currentId: UInt, destId: UInt): UInt = {
     val possiblePorts = getPossiblePorts(currentId, destId)
-    val validPorts = VecInit(possiblePorts.zip(availablePorts).map { case (p, a) => p && a })
-
     // Simplified version: uses priority encoder (should use congestion info in practice)
     // Full implementation requires congestionInfo parameter
     val portWidth = chisel3.util.log2Ceil(config.totalPorts)
-    val selected = PriorityEncoder(validPorts.asUInt)
+    val selected = PriorityEncoder(possiblePorts.asUInt)
     selected
   }
 
   /**
    * Routing decision with congestion information
    */
-  def routeWithCongestion(currentId: UInt, destId: UInt, availablePorts: Vec[Bool], congestionInfo: Vec[UInt]): UInt = {
+  def routeWithCongestion(currentId: UInt, destId: UInt, congestionInfo: Vec[UInt]): UInt = {
     val possiblePorts = getPossiblePorts(currentId, destId)
-    val validPorts = VecInit(possiblePorts.zip(availablePorts).map { case (p, a) => p && a })
-    selectLeastCongestedPort(validPorts, congestionInfo)
+    selectLeastCongestedPort(possiblePorts, congestionInfo)
   }
 }

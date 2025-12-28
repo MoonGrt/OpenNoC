@@ -9,4 +9,6 @@ import noc.config.NoCConfig
  * NetworkInterface - Abstract base class for network interfaces
  * Connects computing units to NoC network, responsible for packet packing and unpacking
  */
-abstract class NetworkInterface(val config: NoCConfig, val nodeId: Int) extends Module {}
+abstract class NetworkInterface(val config: NoCConfig, val nodeId: Int) extends Module {
+    // Subclasses define their own io bundles
+}

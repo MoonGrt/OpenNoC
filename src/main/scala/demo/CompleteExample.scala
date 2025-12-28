@@ -76,11 +76,11 @@ class CompleteExample extends Module {
     val ni = meshNoC.getNetworkInterfaces(i)
 
     // Connect PE output to NI input
-    // ni.io.streamIn <> pes(i).io.dataOut
-    // ni.io.destId := pes(i).io.destId
+    ni.io.streamIn <> pes(i).io.dataOut
+    ni.io.destId := pes(i).io.destId
 
     // Connect NI output to PE input
-    // pes(i).io.dataIn <> ni.io.streamOut
+    pes(i).io.dataIn <> ni.io.streamOut
   }
 
   // Example: Start node 0
@@ -93,4 +93,6 @@ class CompleteExample extends Module {
 // object CompleteExample extends App {
 //   (new chisel3.stage.ChiselStage).emitVerilog(new CompleteExample, Array("--target-dir", "rtl"))
 // }
+
+
 

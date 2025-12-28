@@ -45,7 +45,7 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
   // Connect routers (through topology)
   topology.connectRouters(routers.map(_.io))
 
-  override def getNetworkInterfaces: Seq[NetworkInterface] = networkInterfaces
+  override def getNetworkInterfaces: Seq[StreamNI] = networkInterfaces  // StreamNI instead of NetworkInterface
 
   override def getRouters: Seq[Router] = routers
 
@@ -54,14 +54,14 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
 
 
 /**
- * MeshNoCExample - Example of creating a 2D Mesh NoC
+ * MeshNoCGen - Generates a 2D Mesh NoC system
  *
  * This example demonstrates how to:
  * 1. Create a NoC configuration
  * 2. Instantiate a Mesh NoC system
  * 3. Access network interfaces for communication
  */
-class MeshNoCExample extends Module {
+class MeshNoCGen extends Module {
   // Create NoC configuration
   val config = NoCConfig(
     dataWidth = 32,
@@ -93,6 +93,6 @@ class MeshNoCExample extends Module {
   //   node0NI.io.destId := yourPE0.io.destId
 }
 
-// object MeshNoCExample extends App {
-//   (new chisel3.stage.ChiselStage).emitVerilog(new MeshNoCExample, Array("--target-dir", "rtl"))
+// object MeshNoCGen extends App {
+//   (new chisel3.stage.ChiselStage).emitVerilog(new MeshNoCGen, Array("--target-dir", "rtl"))
 // }

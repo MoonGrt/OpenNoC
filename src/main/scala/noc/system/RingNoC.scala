@@ -7,6 +7,7 @@ import noc.router.{Router, RouterBuilder, RouterIO}
 import noc.ni.{NetworkInterface, StreamNI}
 import noc.topology.{NoCTopology, RingTopology}
 import noc.routing.{RoutingPolicy, RingRouting}
+import noc.pe._
 
 /**
  * RingNoC - Ring NoC system
@@ -17,24 +18,26 @@ import noc.routing.{RoutingPolicy, RingRouting}
 class RingNoC(config: NoCConfig, val numNodes: Int) extends NoC(config) {
   require(numNodes > 0, "Number of nodes must be positive")
 
+  val io = IO(new Bundle {
+    val nodeId = Output(Vec(numNodes, UInt(config.nodeIdWidth.W)))
+    val destId = Input(Vec(numNodes, UInt(config.nodeIdWidth.W)))
+    val streamIn  = Flipped(Vec(numNodes, Decoupled(UInt(config.flitWidth.W))))
+    val streamOut = Vec(numNodes, Decoupled(UInt(config.flitWidth.W)))
+  })
+
   // Create topology
   val topology = new RingTopology(config, numNodes)
 
   // Create routers
   val routingPolicy: RoutingPolicy = new RingRouting(config, numNodes)
-  val routers = Seq.fill(numNodes) {
-    Module(new Router(config, routingPolicy))
-  }
+  val routers = Seq.fill(numNodes) { Module(new Router(config, routingPolicy)) }
   // Create network interfaces
-  val networkInterfaces = (0 until numNodes).map { i =>
-    Module(new StreamNI(config, i))
-  }
+  val networkInterfaces = (0 until numNodes).map { i => Module(new StreamNI(config, i)) }
 
   // Connect network interfaces to router Local ports
   for (i <- 0 until numNodes) {
     routers(i).io.routerId := i.U
     routers(i).io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
-
     // NI connected to router Local port
     routers(i).io.inPorts(noc.config.Port.Local.id) <> networkInterfaces(i).io.routerLink.out
     networkInterfaces(i).io.routerLink.in <> routers(i).io.outPorts(noc.config.Port.Local.id)
@@ -43,49 +46,66 @@ class RingNoC(config: NoCConfig, val numNodes: Int) extends NoC(config) {
   // Connect routers (through topology)
   topology.connectRouters(routers.map(_.io))
 
-  override def getNetworkInterfaces: Seq[NetworkInterface] = networkInterfaces
+  for (i <- 0 until numNodes) {
+    io.nodeId(i)    <> networkInterfaces(i).io.nodeId
+    io.destId(i)    <> networkInterfaces(i).io.destId
+    io.streamIn(i)  <> networkInterfaces(i).io.streamIn
+    io.streamOut(i) <> networkInterfaces(i).io.streamOut
+  }
+
+  override def getNetworkInterfaces: Seq[StreamNI] = networkInterfaces  // StreamNI instead of NetworkInterface
 
   override def getRouters: Seq[Router] = routers
 
   override def getTopology: NoCTopology = topology
 }
+
 /**
- * RingNoCExample - Example of creating a Ring NoC
+ * RingNoCGen - Ring NoC system generator``
  *
  * This example demonstrates how to:
  * 1. Create a NoC configuration for ring topology
  * 2. Instantiate a Ring NoC system
  * 3. Use the network interfaces for communication
  */
-class RingNoCExample extends Module {
+class RingNoCGen extends Module {
   // Create NoC configuration for ring topology
   val config = NoCConfig(
-    dataWidth = 32,
-    flitWidth = 32,
-    vcNum = 1,           // Single virtual channel
-    bufferDepth = 8,     // Larger buffer for ring topology
-    nodeIdWidth = 2,     // Support up to 4 nodes
-    numPorts = 2,        // 2 ports (East, West) + Local
-    routingType = "Ring",
+    dataWidth    = 32,
+    flitWidth    = 32,
+    vcNum        = 1,  // Single virtual channel
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
+    numPorts     = 2,  // Ring: East + West
+    routingType  = "Ring",
     topologyType = "Ring"
   )
 
   // Create a Ring NoC with 4 nodes
   val ringNoC = Module(new RingNoC(config, numNodes = 4))
-  println("Create a Ring NoC with 4 nodes")
-
-  // Access network interfaces
-  val nis = ringNoC.getNetworkInterfaces
-  println("Access network interfaces")
 
   // Example: Access all network interfaces
-  for (i <- 0 until 4) {
-    val ni = nis(i)
-    // Connect your processing elements here
-    println(s"Network Interface $i connected")
+  // Connect processing elements to network interfaces
+  for (i <- 0 until 2) {
+    // Create processing elements
+    val source = Module(new RandomSourceStreamNI(config))
+    val sink = Module(new FlitSinkStreamNI(config))
+
+    // Connect processing elements to network interfaces
+    source.io.enable := true.B
+    source.io.seed := 7.U(config.dataWidth.W)
+    source.io.nodeId <> ringNoC.io.nodeId(i)
+    source.io.destId <> ringNoC.io.destId(i)
+    source.io.streamOut <> ringNoC.io.streamIn(i)
+    source.io.streamIn <> ringNoC.io.streamOut(i)
+
+    sink.io.nodeId <> ringNoC.io.nodeId(i+2)
+    sink.io.destId <> ringNoC.io.destId(i+2)
+    sink.io.streamIn <> ringNoC.io.streamOut(i+2)
+    sink.io.streamOut <> ringNoC.io.streamIn(i+2)
   }
 }
 
-// object RingNoCExample extends App {
-//   (new chisel3.stage.ChiselStage).emitVerilog(new RingNoCExample, Array("--target-dir", "rtl"))
-// }
+object RingNoCGen extends App {
+  (new chisel3.stage.ChiselStage).emitVerilog(new RingNoCGen, Array("--target-dir", "rtl"))
+}
