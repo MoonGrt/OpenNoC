@@ -9,8 +9,7 @@ import noc.switch.{SwitchFabric, Crossbar}
 import noc.channel.UniBufferedChannel
 
 /**
- * Router - Router
- * Core component in NoC, responsible for routing and forwarding flits
+ * Router - Core component in NoC, responsible for routing and forwarding flits
  *
  * @param config NoC configuration
  * @param routingPolicy Routing policy
@@ -18,15 +17,24 @@ import noc.channel.UniBufferedChannel
 class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Module {
   val io = IO(new RouterIO(config))
 
+  // // Input buffers: create buffers for each input port and each VC
+  // val inputBuffers = Seq.fill(config.totalPorts) {
+  //   Seq.fill(config.vcNum) { Module(new UniBufferedChannel(config, config.bufferDepth)) }
+  // }
+
+  // // Connect input ports to buffers
+  // for (port <- 0 until config.totalPorts) {
+  //   // Simplified: assume only one VC, should route to corresponding VC based on flit's vcId
+  //   inputBuffers(port)(0).io.in <> io.inPorts(port)
+  // }
+
   // Input buffers: create buffers for each input port and each VC
   val inputBuffers = Seq.fill(config.totalPorts) {
-    Seq.fill(config.vcNum) { Module(new UniBufferedChannel(config, config.bufferDepth)) }
+    Module(new VirtualChannel(config))
   }
-
   // Connect input ports to buffers
   for (port <- 0 until config.totalPorts) {
-    // Simplified: assume only one VC, should route to corresponding VC based on flit's vcId
-    inputBuffers(port)(0).io.in <> io.inPorts(port)
+    inputBuffers(port).io.in <> io.inPorts(port)
   }
 
   // Route computation: compute output port for each input port
@@ -34,8 +42,10 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
   val routeValids = Wire(Vec(config.totalPorts, Bool()))
 
   for (port <- 0 until config.totalPorts) {
-    val flit = inputBuffers(port)(0).io.out.bits
-    val hasFlit = inputBuffers(port)(0).io.out.valid
+    // val flit = inputBuffers(port)(0).io.out.bits
+    // val hasFlit = inputBuffers(port)(0).io.out.valid
+    val flit = inputBuffers(port).io.out.bits
+    val hasFlit = inputBuffers(port).io.out.valid
 
     // Compute routing decision (only compute for head flit, body and tail flits use previous routing decision)
     val routeDecision = routingPolicy.route(io.routerId, flit.dstId)
@@ -48,7 +58,8 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
 
   // Connect buffer outputs to Crossbar inputs
   for (port <- 0 until config.totalPorts) {
-    crossbar.io.in(port) <> inputBuffers(port)(0).io.out
+    // crossbar.io.in(port) <> inputBuffers(port)(0).io.out
+    crossbar.io.in(port) <> inputBuffers(port).io.out
     crossbar.io.select(port) := routeDecisions(port)
   }
 

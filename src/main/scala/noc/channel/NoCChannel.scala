@@ -7,6 +7,8 @@ import noc.config.NoCConfig
 
 /**
  * Unidirectional Channel Bundle
+ * 
+ * @param config NoC configuration
  */
 class UniChannel(val config: NoCConfig) extends Bundle {
   val in  = Flipped(Decoupled(new Flit(config)))
@@ -15,6 +17,8 @@ class UniChannel(val config: NoCConfig) extends Bundle {
 
 /**
  * Bidirectional Channel Bundle
+ * 
+ * @param config NoC configuration
  */
 class BiChannel(val config: NoCConfig) extends Bundle {
   val tx = new UniChannel(config)
@@ -24,6 +28,8 @@ class BiChannel(val config: NoCConfig) extends Bundle {
 /**
  * NoCChannel - Abstract base class for channels
  * All channel implementations should extend this class
+ * 
+ * @param config NoC configuration
  */
 abstract class UniNoCChannel(val config: NoCConfig) extends Module {
   val io = IO(new UniChannel(config))

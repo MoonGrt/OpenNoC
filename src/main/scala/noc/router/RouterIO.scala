@@ -21,6 +21,12 @@ class RouterIO(val config: NoCConfig) extends Bundle {
   // Router ID
   val routerId = Input(UInt(config.nodeIdWidth.W))
 
+  // Optional credits for buffering
+  // val incredits = Input(Vec(config.totalPorts, Bool()))
+  // val increditsvcid = Input(Vec(config.totalPorts, UInt(config.vcIdWidth.W)))
+  // val outcredits = Output(Vec(config.totalPorts, Bool()))
+  // val outcreditsvcid = Output(Vec(config.totalPorts, UInt(config.vcIdWidth.W)))
+
   // Optional congestion information (for adaptive routing)
   val congestionInfo = Input(Vec(config.totalPorts, UInt(8.W)))  // Congestion level for each port
   // val congestionInfo = if (config.routingType == "Adaptive") {  // Congestion level for each port

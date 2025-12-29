@@ -63,7 +63,7 @@ object RingNoC extends App {
   val config = NoCConfig(
     dataWidth    = 32,
     flitWidth    = 32,
-    vcNum        = 1,  // Single virtual channel
+    vcNum        = 2,  // 2 virtual channels
     bufferDepth  = 4,  // Larger buffer for ring topology
     nodeIdWidth  = 2,  // Support up to 4 nodes
     numPorts     = 2,  // Ring: East + West

@@ -16,6 +16,7 @@ package noc.config
 case class NoCConfig(
   dataWidth: Int = 32,
   flitWidth: Int = 32,
+  // phitWidth: Int = 8,
   vcNum: Int = 1,
   bufferDepth: Int = 4,
   nodeIdWidth: Int = 8,

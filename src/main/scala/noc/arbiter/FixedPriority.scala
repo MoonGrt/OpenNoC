@@ -16,10 +16,7 @@ class FixedPriority(config: NoCConfig, numInputs: Int) extends NoCArbiter(config
   val arbiter = Module(new chisel3.util.Arbiter(new Flit(config), numInputs))
 
   // Connect inputs
-  for (i <- 0 until numInputs) {
-    arbiter.io.in(i) <> io.in(i)
-  }
-
+  for (i <- 0 until numInputs) { arbiter.io.in(i) <> io.in(i) }
   // Connect output
   io.out <> arbiter.io.out
   io.chosen := arbiter.io.chosen

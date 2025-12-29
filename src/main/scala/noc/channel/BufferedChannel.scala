@@ -16,7 +16,6 @@ class UniBufferedChannel(config: NoCConfig, depth: Int = 4) extends UniNoCChanne
   require(depth > 0, "Buffer depth must be positive")
 
   val queue = Module(new Queue(new Flit(config), depth, pipe = false, flow = false))
-
   queue.io.enq <> io.in
   queue.io.deq <> io.out
 }
