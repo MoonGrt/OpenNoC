@@ -3,6 +3,7 @@
 .vscode
 test_run_dir
 rtl
+vivado
 
 ### Project Specific stuff
 test_run_dir/*

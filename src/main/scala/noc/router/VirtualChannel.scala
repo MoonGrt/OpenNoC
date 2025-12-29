@@ -31,7 +31,7 @@ class VirtualChannel(config: NoCConfig) extends Module {
   // VC wiring
   for (i <- 0 until config.vcNum) {
     // Connect input to virtual channel
-    val selected = io.in.bits.vcId  === i.U
+    val selected = io.in.bits.vcId === i.U
     vc(i).io.in.bits := io.in.bits
     vc(i).io.in.valid := io.in.valid && selected
     io.in.ready := Mux(selected, RegNext(vc(i).io.in.ready), false.B)

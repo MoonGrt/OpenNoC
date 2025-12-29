@@ -17,17 +17,6 @@ import noc.channel.UniBufferedChannel
 class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Module {
   val io = IO(new RouterIO(config))
 
-  // // Input buffers: create buffers for each input port and each VC
-  // val inputBuffers = Seq.fill(config.totalPorts) {
-  //   Seq.fill(config.vcNum) { Module(new UniBufferedChannel(config, config.bufferDepth)) }
-  // }
-
-  // // Connect input ports to buffers
-  // for (port <- 0 until config.totalPorts) {
-  //   // Simplified: assume only one VC, should route to corresponding VC based on flit's vcId
-  //   inputBuffers(port)(0).io.in <> io.inPorts(port)
-  // }
-
   // Input buffers: create buffers for each input port and each VC
   val inputBuffers = Seq.fill(config.totalPorts) {
     Module(new VirtualChannel(config))
@@ -42,8 +31,6 @@ class Router(val config: NoCConfig, val routingPolicy: RoutingPolicy) extends Mo
   val routeValids = Wire(Vec(config.totalPorts, Bool()))
 
   for (port <- 0 until config.totalPorts) {
-    // val flit = inputBuffers(port)(0).io.out.bits
-    // val hasFlit = inputBuffers(port)(0).io.out.valid
     val flit = inputBuffers(port).io.out.bits
     val hasFlit = inputBuffers(port).io.out.valid
 
