@@ -13,10 +13,10 @@ import noc.config.NoCConfig
  */
 class RouterIO(val config: NoCConfig) extends Bundle {
   // Input ports (including Local port)
-  val inPorts = Flipped(Vec(config.totalPorts, Decoupled(new Flit(config))))
+  val inPorts = Flipped(Vec(config.totalPorts, Decoupled(new Flit(config.flitConfig))))
 
   // Output ports (including Local port)
-  val outPorts = Vec(config.totalPorts, Decoupled(new Flit(config)))
+  val outPorts = Vec(config.totalPorts, Decoupled(new Flit(config.flitConfig)))
 
   // Router ID
   val routerId = Input(UInt(config.nodeIdWidth.W))

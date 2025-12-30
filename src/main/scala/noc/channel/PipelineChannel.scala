@@ -12,7 +12,7 @@ import noc.config.NoCConfig
  * @param config NoC configuration
  */
 class UniPipelineChannel(config: NoCConfig) extends UniNoCChannel(config) {
-  val flitReg = Reg(new Flit(config))
+  val flitReg = Reg(new Flit(config.flitConfig))
   val validReg = RegInit(false.B)
 
   // Can receive new data when output is ready or invalid
@@ -27,10 +27,10 @@ class UniPipelineChannel(config: NoCConfig) extends UniNoCChannel(config) {
 }
 class BiPipelineChannel(config: NoCConfig) extends BiNoCChannel(config) {
   // tx
-  val txflitReg = Reg(new Flit(config))
+  val txflitReg = Reg(new Flit(config.flitConfig))
   val txvalidReg = RegInit(false.B)
   // rx
-  val rxflitReg = Reg(new Flit(config))
+  val rxflitReg = Reg(new Flit(config.flitConfig))
   val rxvalidReg = RegInit(false.B)
 
   // Can receive new data when output is ready or invalid

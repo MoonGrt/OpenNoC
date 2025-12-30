@@ -13,11 +13,13 @@ import noc.config.NoCConfig
  * @param nodeId Node ID
  */
 class AXINI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nodeId) {
+  import config._
+
   val io = IO(new Bundle {
     // Inherit base interface
     val routerLink = new Bundle {
-      val out = Decoupled(new Flit(config))
-      val in = Flipped(Decoupled(new Flit(config)))
+      val out = Decoupled(new Flit(flitConfig))
+      val in = Flipped(Decoupled(new Flit(flitConfig)))
     }
     val nodeId = Output(UInt(config.nodeIdWidth.W))
 
@@ -66,7 +68,7 @@ class AXINI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nod
       when(io.w.valid) {
         val flitData = Cat(io.w.bits, io.aw.bits.addr)  // Simplified: combine address and data
         io.routerLink.out.valid := true.B
-        io.routerLink.out.bits := Flit.headTail(config, nodeId.U, writeDestId, flitData)
+        io.routerLink.out.bits := Flit.headTail(flitConfig, nodeId.U, writeDestId, flitData)
         io.w.ready := io.routerLink.out.ready
         when(io.routerLink.out.ready) {
           writeState := 0.U
@@ -89,7 +91,7 @@ class AXINI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nod
       when(io.ar.valid) {
         val readReq = Cat(io.ar.bits.addr, 0.U((config.dataWidth - io.ar.bits.addr.getWidth).W))
         io.routerLink.out.valid := true.B
-        io.routerLink.out.bits := Flit.headTail(config, nodeId.U, io.ar.bits.destId, readReq)
+        io.routerLink.out.bits := Flit.headTail(flitConfig, nodeId.U, io.ar.bits.destId, readReq)
         io.ar.ready := io.routerLink.out.ready
         when(io.routerLink.out.ready) {
           readState := 1.U

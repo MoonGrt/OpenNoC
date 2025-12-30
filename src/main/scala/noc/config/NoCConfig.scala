@@ -5,7 +5,6 @@ package noc.config
  * Contains all configuration parameters required for NoC design
  *
  * @param dataWidth Data bit width (flit bit width)
- * @param flitWidth Flit bit width (usually equals dataWidth)
  * @param vcNum Number of virtual channels
  * @param bufferDepth Buffer depth for each virtual channel
  * @param nodeIdWidth Bit width of node ID
@@ -15,8 +14,6 @@ package noc.config
  */
 case class NoCConfig(
   dataWidth: Int = 32,
-  flitWidth: Int = 32,
-  // phitWidth: Int = 8,
   vcNum: Int = 1,
   bufferDepth: Int = 4,
   nodeIdWidth: Int = 8,
@@ -25,7 +22,6 @@ case class NoCConfig(
   topologyType: String = "Mesh"
 ) {
   require(dataWidth > 0, "Data width must be positive")
-  require(flitWidth > 0, "Flit width must be positive")
   require(vcNum > 0, "Virtual channel number must be positive")
   require(bufferDepth > 0, "Buffer depth must be positive")
   require(nodeIdWidth > 0, "NodeId width must be positive")
@@ -39,4 +35,5 @@ case class NoCConfig(
   // Create sub-configuration objects
   def nodeIdConfig: NodeIdConfig = NodeIdConfig(nodeIdWidth)
   def portConfig: PortConfig = PortConfig(numPorts)
+  def flitConfig: FlitConfig = FlitConfig(vcIdWidth, nodeIdWidth, dataWidth)
 }

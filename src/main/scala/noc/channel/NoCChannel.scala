@@ -11,8 +11,8 @@ import noc.config.NoCConfig
  * @param config NoC configuration
  */
 class UniChannel(val config: NoCConfig) extends Bundle {
-  val in  = Flipped(Decoupled(new Flit(config)))
-  val out = Decoupled(new Flit(config))
+  val in  = Flipped(Decoupled(new Flit(config.flitConfig)))
+  val out = Decoupled(new Flit(config.flitConfig))
 }
 
 /**

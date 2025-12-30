@@ -54,7 +54,6 @@ class SimplePE(val config: NoCConfig, val nodeId: Int) extends Module {
 class CompleteExample extends Module {
   val config = NoCConfig(
     dataWidth = 32,
-    flitWidth = 32,
     vcNum = 2,
     bufferDepth = 4,
     nodeIdWidth = 8,

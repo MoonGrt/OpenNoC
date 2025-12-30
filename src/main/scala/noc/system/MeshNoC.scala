@@ -21,8 +21,8 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
   val io = IO(new Bundle {
     val nodeId = Output(Vec(numNodes, UInt(config.nodeIdWidth.W)))
     val destId = Input(Vec(numNodes, UInt(config.nodeIdWidth.W)))
-    val streamIn  = Flipped(Vec(numNodes, Decoupled(UInt(config.flitWidth.W))))
-    val streamOut = Vec(numNodes, Decoupled(UInt(config.flitWidth.W)))
+    val streamIn  = Flipped(Vec(numNodes, Decoupled(UInt(config.dataWidth.W))))  // phitWidth
+    val streamOut = Vec(numNodes, Decoupled(UInt(config.dataWidth.W)))  // phitWidth
   })
 
   // Create topology
@@ -80,7 +80,6 @@ class MeshNoCGen extends Module {
   // Create NoC configuration
   val config = NoCConfig(
     dataWidth    = 32,
-    flitWidth    = 32,
     vcNum        = 1,  // 1 virtual channels
     bufferDepth  = 4,  // Larger buffer for ring topology
     nodeIdWidth  = 2,  // Support up to 4 nodes

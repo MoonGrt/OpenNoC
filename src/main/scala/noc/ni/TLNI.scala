@@ -13,11 +13,13 @@ import noc.config.NoCConfig
  * @param nodeId Node ID
  */
 class TLNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nodeId) {
+  import config._
+
   val io = IO(new Bundle {
     // Inherit base interface
     val routerLink = new Bundle {
-      val out = Decoupled(new Flit(config))
-      val in = Flipped(Decoupled(new Flit(config)))
+      val out = Decoupled(new Flit(flitConfig))
+      val in = Flipped(Decoupled(new Flit(flitConfig)))
     }
     val nodeId = Output(UInt(config.nodeIdWidth.W))
 
@@ -64,7 +66,7 @@ class TLNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, node
       req.opcode
     )
     io.routerLink.out.valid := true.B
-    io.routerLink.out.bits := Flit.headTail(config, nodeId.U, req.address(31, 24), flitData)
+    io.routerLink.out.bits := Flit.headTail(flitConfig, nodeId.U, req.address(31, 24), flitData)
     sendQueue.io.deq.ready := io.routerLink.out.ready
   }
 

@@ -12,7 +12,7 @@ import noc.config.NoCConfig
  * @param maxFlits Maximum number of flits
  */
 class Packet(val config: NoCConfig, val maxFlits: Int = 8) extends Bundle {
-  val flits = Vec(maxFlits, new Flit(config))
+  val flits = Vec(maxFlits, new Flit(config.flitConfig))
   val length = UInt(chisel3.util.log2Ceil(maxFlits + 1).W)  // Actual number of flits
   val valid = Bool()
 
@@ -44,7 +44,7 @@ object Packet {
       if (i < flitSeq.length) {
         packet.flits(i) := flitSeq(i)
       } else {
-        packet.flits(i) := Flit.empty(config)
+        packet.flits(i) := Flit.empty(config.flitConfig)
       }
     }
     packet.length := flitSeq.length.U
@@ -57,7 +57,7 @@ object Packet {
    */
   def singleFlit(config: NoCConfig, srcId: UInt, dstId: UInt, data: UInt, vcId: UInt = 0.U): Packet = {
     val packet = Wire(new Packet(config, 1))
-    packet.flits(0) := Flit.headTail(config, srcId, dstId, data, vcId)
+    packet.flits(0) := Flit.headTail(config.flitConfig, srcId, dstId, data, vcId)
     packet.length := 1.U
     packet.valid := true.B
     packet

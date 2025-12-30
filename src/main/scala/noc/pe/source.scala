@@ -12,8 +12,8 @@ import noc.config.NoCConfig
  * @param config NoC configuration
  */
 class SourceIO(val config: NoCConfig) extends Bundle {
-  val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-  val flitOut = Decoupled(new Flit(config))
+  val flitIn = Flipped(Decoupled(new Flit(config.flitConfig)))  // Present but not used (ready = false)
+  val flitOut = Decoupled(new Flit(config.flitConfig))
   val nodeId = Input(UInt(config.nodeIdWidth.W))  // This node's ID
 }
 class SourceStreamNIIO(val config: NoCConfig) extends Bundle {
@@ -44,9 +44,11 @@ abstract class SourceNI(val config: NoCConfig) extends Module {
  * @param nodeId Node ID
  */
 class FlitSource(config: NoCConfig) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
   })
 
@@ -84,9 +86,11 @@ class FlitSourceStreamNI(config: NoCConfig) extends SourceNI(config) {
  * @param nodeId Node ID
  */
 class StreamSource(config: NoCConfig) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val dataIn = Flipped(Decoupled(UInt(config.dataWidth.W)))
     val destId = Input(UInt(config.nodeIdWidth.W))  // Destination node ID
@@ -115,7 +119,7 @@ class StreamSource(config: NoCConfig) extends Source(config) {
         sendCounter := 1.U
         // Send head flit
         io.flitOut.valid := true.B
-        io.flitOut.bits := Flit.head(config, io.nodeId, io.destId, sendQueue.io.deq.bits)
+        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, io.destId, sendQueue.io.deq.bits)
         sendQueue.io.deq.ready := io.flitOut.ready
       }
     }
@@ -126,11 +130,11 @@ class StreamSource(config: NoCConfig) extends Source(config) {
         val isLast = sendCounter >= (config.bufferDepth - 1).U
         io.flitOut.valid := true.B
         when(isLast) {
-          io.flitOut.bits := Flit.tail(config, sendQueue.io.deq.bits)
+          io.flitOut.bits := Flit.tail(flitConfig, sendQueue.io.deq.bits)
           sendState := 0.U
           sendCounter := 0.U
         }.otherwise {
-          io.flitOut.bits := Flit.body(config, sendQueue.io.deq.bits)
+          io.flitOut.bits := Flit.body(flitConfig, sendQueue.io.deq.bits)
           sendCounter := sendCounter + 1.U
         }
         sendQueue.io.deq.ready := io.flitOut.ready
@@ -148,9 +152,11 @@ class StreamSource(config: NoCConfig) extends Source(config) {
  * @param maxFlits Maximum number of flits per packet
  */
 class PacketSource(config: NoCConfig, maxFlits: Int = 8) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val packetIn = Flipped(Decoupled(new Packet(config, maxFlits)))
   })
@@ -207,9 +213,11 @@ class PacketSource(config: NoCConfig, maxFlits: Int = 8) extends Source(config) 
  * @param countLimit Maximum count value
  */
 class CounterSource(config: NoCConfig, countLimit: Int = 1000) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val destId = Input(UInt(config.nodeIdWidth.W))
     val start = Input(Bool())
@@ -234,7 +242,7 @@ class CounterSource(config: NoCConfig, countLimit: Int = 1000) extends Source(co
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(config, io.nodeId, io.destId, counter, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, io.destId, counter, 0.U)
 
       when(io.flitOut.ready) {
         counter := counter + 1.U
@@ -255,9 +263,11 @@ class CounterSource(config: NoCConfig, countLimit: Int = 1000) extends Source(co
  * @param burstSize Number of flits per burst
  */
 class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val destId = Input(UInt(config.nodeIdWidth.W))
     val start = Input(Bool())
@@ -288,7 +298,7 @@ class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) 
         dataReg := dataQueue.io.deq.bits
         // Send head flit
         io.flitOut.valid := true.B
-        io.flitOut.bits := Flit.head(config, io.nodeId, io.destId, dataQueue.io.deq.bits)
+        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, io.destId, dataQueue.io.deq.bits)
         dataQueue.io.deq.ready := io.flitOut.ready
       }
     }
@@ -297,11 +307,11 @@ class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) 
       when(dataQueue.io.deq.valid) {
         io.flitOut.valid := true.B
         when(isLast) {
-          io.flitOut.bits := Flit.tail(config, dataQueue.io.deq.bits)
+          io.flitOut.bits := Flit.tail(flitConfig, dataQueue.io.deq.bits)
           sendState := 0.U
           flitCount := 0.U
         }.otherwise {
-          io.flitOut.bits := Flit.body(config, dataQueue.io.deq.bits)
+          io.flitOut.bits := Flit.body(flitConfig, dataQueue.io.deq.bits)
           flitCount := flitCount + 1.U
         }
         dataQueue.io.deq.ready := io.flitOut.ready
@@ -318,9 +328,11 @@ class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) 
  * @param nodeId Node ID
  */
 class PatternSource(config: NoCConfig) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val destId = Input(UInt(config.nodeIdWidth.W))
     val pattern = Input(UInt(config.dataWidth.W))  // Pattern value
@@ -346,7 +358,7 @@ class PatternSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(config, io.nodeId, sendDestId, io.pattern, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, sendDestId, io.pattern, 0.U)
 
       when(io.flitOut.ready) {
         sendState := 0.U
@@ -363,9 +375,11 @@ class PatternSource(config: NoCConfig) extends Source(config) {
  * @param nodeId Node ID
  */
 class RandomSource(config: NoCConfig) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))  // Present but not used (ready = false)
-    val flitOut = Decoupled(new Flit(config))
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))  // Present but not used (ready = false)
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val destId = Input(UInt(config.nodeIdWidth.W))
     val enable = Input(Bool())
@@ -413,7 +427,7 @@ class RandomSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(config, io.nodeId, io.destId, lfsr, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, io.destId, lfsr, 0.U)
 
       when(io.flitOut.ready) {
         lfsr := lfsrNext(lfsr)

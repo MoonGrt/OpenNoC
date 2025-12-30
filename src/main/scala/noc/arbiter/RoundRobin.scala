@@ -13,7 +13,9 @@ import noc.config.NoCConfig
  * @param numInputs Number of inputs
  */
 class RoundRobin(config: NoCConfig, numInputs: Int) extends NoCArbiter(config, numInputs) {
-  val arbiter = Module(new chisel3.util.RRArbiter(new Flit(config), numInputs))
+  import config._
+
+  val arbiter = Module(new chisel3.util.RRArbiter(new Flit(flitConfig), numInputs))
 
   // Connect inputs
   for (i <- 0 until numInputs) { arbiter.io.in(i) <> io.in(i) }

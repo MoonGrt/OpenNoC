@@ -15,7 +15,6 @@ import noc.data.{Flit, Packet}
 class FlitExample extends Module {
   val config = NoCConfig(
     dataWidth = 32,
-    flitWidth = 32,
     vcNum = 2,
     bufferDepth = 4,
     nodeIdWidth = 8,
@@ -24,7 +23,7 @@ class FlitExample extends Module {
 
   // Example 1: Create a head flit
   val headFlit = Flit.head(
-    config = config,
+    config = config.flitConfig,
     srcId = 0.U,
     dstId = 5.U,
     data = "h12345678".U(32.W),
@@ -33,21 +32,21 @@ class FlitExample extends Module {
 
   // Example 2: Create a body flit
   val bodyFlit = Flit.body(
-    config = config,
+    config = config.flitConfig,
     data = "hABCDEF00".U(32.W),
     vcId = 0.U
   )
 
   // Example 3: Create a tail flit
   val tailFlit = Flit.tail(
-    config = config,
+    config = config.flitConfig,
     data = "hFFFFFFFF".U(32.W),
     vcId = 0.U
   )
 
   // Example 4: Create a single-flit packet (headTail)
   val singleFlit = Flit.headTail(
-    config = config,
+    config = config.flitConfig,
     srcId = 0.U,
     dstId = 5.U,
     data = "hDEADBEEF".U(32.W),
@@ -55,7 +54,7 @@ class FlitExample extends Module {
   )
 
   // Example 5: Create an empty flit
-  val emptyFlit = Flit.empty(config)
+  val emptyFlit = Flit.empty(config.flitConfig)
 
   // Example 6: Check flit types
   val isHead = headFlit.isHead

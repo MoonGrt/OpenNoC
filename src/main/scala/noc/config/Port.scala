@@ -61,6 +61,5 @@ case class PortConfig(numPorts: Int) {
   require(numPorts > 0, "Number of ports must be positive")
 
   def totalPorts: Int = numPorts + 1  // Including Local port
-
   def portWidth: Int = chisel3.util.log2Ceil(totalPorts)
 }

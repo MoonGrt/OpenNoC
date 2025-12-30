@@ -14,10 +14,11 @@ import noc.arbiter.{NoCArbiter, RoundRobin}
  */
 class VirtualChannel(config: NoCConfig) extends Module {
   require(config.bufferDepth > 0, "VirtualChannel buffer depth must be positive")
+  import config._
 
   val io = IO(new Bundle {
-    val in  = Flipped(Decoupled(new Flit(config)))
-    val out = Decoupled(new Flit(config))
+    val in  = Flipped(Decoupled(new Flit(flitConfig)))
+    val out = Decoupled(new Flit(flitConfig))
   })
 
   // Create virtual channels

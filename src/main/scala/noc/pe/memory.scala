@@ -13,9 +13,11 @@ import noc.config.NoCConfig
  * @param bufferDepth Depth of the memory buffer
  */
 class MemorySink(config: NoCConfig, bufferDepth: Int = 256) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val dataOut = Output(Vec(bufferDepth, UInt(config.dataWidth.W)))
     val writeAddr = Output(UInt(log2Ceil(bufferDepth).W))
@@ -74,8 +76,10 @@ class MemorySink(config: NoCConfig, bufferDepth: Int = 256) extends Sink(config)
  * @param bufferDepth Depth of the memory buffer
  */
 class MemorySource(config: NoCConfig, bufferDepth: Int = 256) extends Source(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitOut = Decoupled(new Flit(config))
+    val flitOut = Decoupled(new Flit(flitConfig))
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val destId = Input(UInt(config.nodeIdWidth.W))
     val start = Input(Bool())
@@ -131,9 +135,9 @@ class MemorySource(config: NoCConfig, bufferDepth: Int = 256) extends Source(con
       val data = memory.read(readPtr)
       io.flitOut.valid := true.B
       when(sendLength === 1.U) {
-        io.flitOut.bits := Flit.headTail(config, io.nodeId, sendDestId, data, 0.U)
+        io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, sendDestId, data, 0.U)
       }.otherwise {
-        io.flitOut.bits := Flit.head(config, io.nodeId, sendDestId, data, 0.U)
+        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, sendDestId, data, 0.U)
       }
 
       when(io.flitOut.ready) {
@@ -153,9 +157,9 @@ class MemorySource(config: NoCConfig, bufferDepth: Int = 256) extends Source(con
 
       io.flitOut.valid := true.B
       when(isLast) {
-        io.flitOut.bits := Flit.tail(config, data, 0.U)
+        io.flitOut.bits := Flit.tail(flitConfig, data, 0.U)
       }.otherwise {
-        io.flitOut.bits := Flit.body(config, data, 0.U)
+        io.flitOut.bits := Flit.body(flitConfig, data, 0.U)
       }
 
       when(io.flitOut.ready) {

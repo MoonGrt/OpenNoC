@@ -16,6 +16,8 @@ import noc.arbiter.{NoCArbiter, RoundRobin}
  * @param numOutputs Number of outputs
  */
 class SimpleMux(config: NoCConfig, numInputs: Int, numOutputs: Int) extends SwitchFabric(config, numInputs, numOutputs) {
+  import config._
+
   // Create arbiter for each output port
   val arbiters = Seq.fill(numOutputs) {
     Module(new RoundRobin(config, numInputs))
@@ -24,7 +26,7 @@ class SimpleMux(config: NoCConfig, numInputs: Int, numOutputs: Int) extends Swit
   // Route inputs to corresponding arbiters based on select signal
   for (outIdx <- 0 until numOutputs) {
     // Collect all inputs that select this output
-    val selectedInputs = Wire(Vec(numInputs, Decoupled(new Flit(config))))
+    val selectedInputs = Wire(Vec(numInputs, Decoupled(new Flit(flitConfig))))
 
     for (inIdx <- 0 until numInputs) {
       val selected = io.select(inIdx) === outIdx.U

@@ -11,10 +11,11 @@ import noc.config.NoCConfig
  */
 abstract class NoCArbiter(val config: NoCConfig, val numInputs: Int) extends Module {
   require(numInputs > 0, "Number of inputs must be positive")
+  import config._
 
   val io = IO(new Bundle {
-    val in = Flipped(Vec(numInputs, Decoupled(new Flit(config))))
-    val out = Decoupled(new Flit(config))
+    val in = Flipped(Vec(numInputs, Decoupled(new Flit(flitConfig))))
+    val out = Decoupled(new Flit(flitConfig))
     val chosen = Output(UInt(chisel3.util.log2Ceil(numInputs).W))  // Selected input index
   })
 }

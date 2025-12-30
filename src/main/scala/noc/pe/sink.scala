@@ -12,8 +12,8 @@ import noc.config.NoCConfig
  * @param config NoC configuration
  */
 class SinkIO(val config: NoCConfig) extends Bundle {
-  val flitIn = Flipped(Decoupled(new Flit(config)))
-  val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+  val flitIn = Flipped(Decoupled(new Flit(config.flitConfig)))
+  val flitOut = Decoupled(new Flit(config.flitConfig))  // Present but not used (valid = false)
   val nodeId = Input(UInt(config.nodeIdWidth.W))  // This node's ID
 }
 class SinkStreamNIIO(val config: NoCConfig) extends Bundle {
@@ -43,9 +43,11 @@ abstract class SinkNI(val config: NoCConfig) extends Module {
  * @param config NoC configuration
  */
 class FlitSink(config: NoCConfig) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
   })
 
@@ -81,9 +83,11 @@ class FlitSinkStreamNI(config: NoCConfig) extends SinkNI(config) {
  * @param config NoC configuration
  */
 class StreamSink(config: NoCConfig) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val dataOut = Decoupled(UInt(config.dataWidth.W))
   })
@@ -138,9 +142,11 @@ class StreamSink(config: NoCConfig) extends Sink(config) {
  * @param maxFlits Maximum number of flits per packet
  */
 class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val packetOut = Decoupled(new Packet(config, maxFlits))
   })
@@ -149,7 +155,7 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
   io.flitOut.valid := false.B
   io.flitOut.bits := DontCare
 
-  val packetBuffer = Reg(Vec(maxFlits, new Flit(config)))
+  val packetBuffer = Reg(Vec(maxFlits, new Flit(flitConfig)))
   val packetLength = RegInit(0.U(log2Ceil(maxFlits + 1).W))
   val recvState = RegInit(0.U(2.W))  // 0: waiting head, 1: receiving
   val packetValid = RegInit(false.B)
@@ -204,7 +210,7 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
     if (i == 0) {
       io.packetOut.bits.flits(i) := packetBuffer(0)
     } else {
-      io.packetOut.bits.flits(i) := Mux(i.U < packetLength, packetBuffer(i), Flit.empty(config))
+      io.packetOut.bits.flits(i) := Mux(i.U < packetLength, packetBuffer(i), Flit.empty(flitConfig))
     }
   }
   io.packetOut.bits.length := packetLength
@@ -218,9 +224,11 @@ class PacketSink(config: NoCConfig, maxFlits: Int = 8) extends Sink(config) {
  * @param config NoC configuration
  */
 class CounterSink(config: NoCConfig) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val flitCount = Output(UInt(32.W))
     val packetCount = Output(UInt(32.W))
@@ -262,9 +270,11 @@ class CounterSink(config: NoCConfig) extends Sink(config) {
  * @param config NoC configuration
  */
 class StatisticsSink(config: NoCConfig) extends Sink(config) {
+  import config._
+
   val io = IO(new Bundle {
-    val flitIn = Flipped(Decoupled(new Flit(config)))
-    val flitOut = Decoupled(new Flit(config))  // Present but not used (valid = false)
+    val flitIn = Flipped(Decoupled(new Flit(flitConfig)))
+    val flitOut = Decoupled(new Flit(flitConfig))  // Present but not used (valid = false)
     val nodeId = Input(UInt(config.nodeIdWidth.W))
     val flitCount = Output(UInt(32.W))
     val packetCount = Output(UInt(32.W))
@@ -290,7 +300,7 @@ class StatisticsSink(config: NoCConfig) extends Sink(config) {
 
   when(io.flitIn.valid && io.flitIn.ready) {
     flitCounter := flitCounter + 1.U
-    bytesCounter := bytesCounter + (config.flitWidth / 8).U
+    bytesCounter := bytesCounter + (config.dataWidth / 8).U  // phitWidth
 
     when(io.flitIn.bits.isHead) {
       headFlitCounter := headFlitCounter + 1.U

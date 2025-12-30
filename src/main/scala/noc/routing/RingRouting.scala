@@ -47,7 +47,6 @@ class RingRouting(config: NoCConfig, numNodes: Int) extends DeterministicRouting
 //   // ------------------------------------------------------------
 //   val config = NoCConfig(
 //     dataWidth    = 32,
-//     flitWidth    = 32,
 //     vcNum        = 1,  // Single virtual channel
 //     bufferDepth  = 4,  // Larger buffer for ring topology
 //     nodeIdWidth  = 2,  // Support up to 4 nodes

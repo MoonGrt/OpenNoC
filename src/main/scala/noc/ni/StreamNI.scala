@@ -13,11 +13,13 @@ import noc.config.NoCConfig
  * @param nodeId Node ID
  */
 class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nodeId) {
+  import config._
+
   val io = IO(new Bundle {
     // Inherit base interface
     val routerLink = new Bundle {
-      val out = Decoupled(new Flit(config))
-      val in = Flipped(Decoupled(new Flit(config)))
+      val out = Decoupled(new Flit(flitConfig))
+      val in = Flipped(Decoupled(new Flit(flitConfig)))
     }
     val nodeId = Output(UInt(config.nodeIdWidth.W))
 
@@ -50,20 +52,20 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
         sendCounter := 1.U
         // Send head flit
         io.routerLink.out.valid := true.B
-        io.routerLink.out.bits := Flit.head(config, nodeId.U, io.destId, sendQueue.io.deq.bits)
+        io.routerLink.out.bits := Flit.head(flitConfig, nodeId.U, io.destId, sendQueue.io.deq.bits)
         sendQueue.io.deq.ready := io.routerLink.out.ready
       }
     }
     is(1.U) {
       // Send body flit or tail flit
       when(sendQueue.io.deq.valid) {
-        val isLast = sendCounter === (config.bufferDepth - 1).U || !sendQueue.io.deq.valid
+        val isLast = sendCounter === (bufferDepth - 1).U || !sendQueue.io.deq.valid
         io.routerLink.out.valid := true.B
         when(isLast) {
-          io.routerLink.out.bits := Flit.tail(config, sendQueue.io.deq.bits)
+          io.routerLink.out.bits := Flit.tail(flitConfig, sendQueue.io.deq.bits)
           sendState := 0.U
         }.otherwise {
-          io.routerLink.out.bits := Flit.body(config, sendQueue.io.deq.bits)
+          io.routerLink.out.bits := Flit.body(flitConfig, sendQueue.io.deq.bits)
         }
         sendQueue.io.deq.ready := io.routerLink.out.ready
         sendCounter := sendCounter + 1.U
@@ -117,7 +119,6 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
 // object StreamNIGen extends App {
 //   val config = NoCConfig(
 //     dataWidth    = 32,
-//     flitWidth    = 32,
 //     vcNum        = 1,  // Single virtual channel
 //     bufferDepth  = 4,  // Larger buffer for ring topology
 //     nodeIdWidth  = 2,  // Support up to 4 nodes
