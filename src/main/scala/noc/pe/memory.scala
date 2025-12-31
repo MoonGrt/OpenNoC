@@ -135,9 +135,9 @@ class MemorySource(config: NoCConfig, bufferDepth: Int = 256) extends Source(con
       val data = memory.read(readPtr)
       io.flitOut.valid := true.B
       when(sendLength === 1.U) {
-        io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, sendDestId, data, 0.U)
+        io.flitOut.bits := Flit.headTail(flitConfig, 0.U, sendDestId, data)
       }.otherwise {
-        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, sendDestId, data, 0.U)
+        io.flitOut.bits := Flit.head(flitConfig, 0.U, sendDestId, data)
       }
 
       when(io.flitOut.ready) {

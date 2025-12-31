@@ -130,11 +130,11 @@ class StreamSource(config: NoCConfig) extends Source(config) {
         val isLast = sendCounter >= (config.bufferDepth - 1).U
         io.flitOut.valid := true.B
         when(isLast) {
-          io.flitOut.bits := Flit.tail(flitConfig, sendQueue.io.deq.bits)
+          io.flitOut.bits := Flit.tail(flitConfig, data = sendQueue.io.deq.bits)
           sendState := 0.U
           sendCounter := 0.U
         }.otherwise {
-          io.flitOut.bits := Flit.body(flitConfig, sendQueue.io.deq.bits)
+          io.flitOut.bits := Flit.body(flitConfig, data = sendQueue.io.deq.bits)
           sendCounter := sendCounter + 1.U
         }
         sendQueue.io.deq.ready := io.flitOut.ready
@@ -242,7 +242,7 @@ class CounterSource(config: NoCConfig, countLimit: Int = 1000) extends Source(co
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, io.destId, counter, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, io.destId, counter, 0.U)
 
       when(io.flitOut.ready) {
         counter := counter + 1.U
@@ -307,11 +307,11 @@ class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) 
       when(dataQueue.io.deq.valid) {
         io.flitOut.valid := true.B
         when(isLast) {
-          io.flitOut.bits := Flit.tail(flitConfig, dataQueue.io.deq.bits)
+          io.flitOut.bits := Flit.tail(flitConfig, data = dataQueue.io.deq.bits)
           sendState := 0.U
           flitCount := 0.U
         }.otherwise {
-          io.flitOut.bits := Flit.body(flitConfig, dataQueue.io.deq.bits)
+          io.flitOut.bits := Flit.body(flitConfig, data = dataQueue.io.deq.bits)
           flitCount := flitCount + 1.U
         }
         dataQueue.io.deq.ready := io.flitOut.ready
@@ -358,7 +358,7 @@ class PatternSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, sendDestId, io.pattern, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, sendDestId, io.pattern, 0.U)
 
       when(io.flitOut.ready) {
         sendState := 0.U
@@ -427,7 +427,7 @@ class RandomSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, io.nodeId, io.destId, lfsr, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, io.destId, lfsr, 0.U)
 
       when(io.flitOut.ready) {
         lfsr := lfsrNext(lfsr)

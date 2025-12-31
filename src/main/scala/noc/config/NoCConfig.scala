@@ -33,7 +33,15 @@ case class NoCConfig(
   def vcIdWidth: Int = chisel3.util.log2Ceil(vcNum)
 
   // Create sub-configuration objects
-  def nodeIdConfig: NodeIdConfig = NodeIdConfig(nodeIdWidth)
-  def portConfig: PortConfig = PortConfig(numPorts)
-  def flitConfig: FlitConfig = FlitConfig(vcIdWidth, nodeIdWidth, dataWidth)
+  val nodeIdConfig: NodeIdConfig = NodeIdConfig(nodeIdWidth)
+  val portConfig: PortConfig = PortConfig(numPorts)
+  val flitConfig: 
+    FlitConfig = FlitConfig(
+      fields = Seq(
+        HeaderField(HeaderType.FlitType, 2),
+        HeaderField(HeaderType.VcId,  vcIdWidth),
+        HeaderField(HeaderType.DstId, nodeIdWidth)
+      ),
+      dataWidth = 32
+    )
 }

@@ -62,10 +62,10 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
         val isLast = sendCounter === (bufferDepth - 1).U || !sendQueue.io.deq.valid
         io.routerLink.out.valid := true.B
         when(isLast) {
-          io.routerLink.out.bits := Flit.tail(flitConfig, sendQueue.io.deq.bits)
+          io.routerLink.out.bits := Flit.tail(flitConfig, data = sendQueue.io.deq.bits)
           sendState := 0.U
         }.otherwise {
-          io.routerLink.out.bits := Flit.body(flitConfig, sendQueue.io.deq.bits)
+          io.routerLink.out.bits := Flit.body(flitConfig, data = sendQueue.io.deq.bits)
         }
         sendQueue.io.deq.ready := io.routerLink.out.ready
         sendCounter := sendCounter + 1.U

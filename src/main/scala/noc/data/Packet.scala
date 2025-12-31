@@ -55,9 +55,9 @@ object Packet {
   /**
    * Create a single-flit packet
    */
-  def singleFlit(config: NoCConfig, srcId: UInt, dstId: UInt, data: UInt, vcId: UInt = 0.U): Packet = {
+  def singleFlit(config: NoCConfig, dstId: UInt, data: UInt, vcId: UInt = 0.U): Packet = {
     val packet = Wire(new Packet(config, 1))
-    packet.flits(0) := Flit.headTail(config.flitConfig, srcId, dstId, data, vcId)
+    packet.flits(0) := Flit.headTail(config.flitConfig, dstId, data, vcId)
     packet.length := 1.U
     packet.valid := true.B
     packet
