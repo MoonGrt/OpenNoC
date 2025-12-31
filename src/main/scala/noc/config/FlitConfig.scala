@@ -64,12 +64,12 @@ object FlitType extends Enumeration {
  * @param dataWidth Data bit width
  */
 case class FlitConfig(
-  fields: Seq[HeaderField],
+  headerFields: Seq[HeaderField],
   dataWidth: Int
 ) {
   /** total header width */
   val headerWidth: Int =
-    fields.map { f => f.Width }.sum
+    headerFields.map { f => f.Width }.sum
 
   /** total flit width */
   val totalWidth: Int =
@@ -78,13 +78,13 @@ case class FlitConfig(
   /** compute bits (header-local bit positions) */
   val bits: Seq[HeaderBits] = {
     var offset = headerWidth
-    fields.map { f =>
+    headerFields.map { f =>
       offset -= f.Width
       HeaderBits(f.Type, f.Width, offset)
     }
   }
 
-  /** convenience: field lookup */
+  /** map of header types to header bits */
   val bitsMap: Map[HeaderType.Value, HeaderBits] =
     bits.map(b => b.Type -> b).toMap
 }

@@ -13,9 +13,9 @@ import noc.config.{NoCConfig, Port}
   */
 class RingRouting(config: NoCConfig, numNodes: Int) extends DeterministicRouting(config) {
   override def getPossiblePorts(currentId: UInt, destId: UInt): chisel3.Vec[chisel3.Bool] = {
-    val possiblePorts = Wire(Vec(config.totalPorts, Bool()))
+    val possiblePorts = Wire(Vec(config.portNum, Bool()))
 
-    for (i <- 0 until config.totalPorts) { possiblePorts(i) := false.B }
+    for (i <- 0 until config.portNum) { possiblePorts(i) := false.B }
 
     val current = currentId
     val dest = destId

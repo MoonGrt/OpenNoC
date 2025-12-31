@@ -2,7 +2,7 @@ package noc.routing
 
 import chisel3._
 import chisel3.util._
-import noc.config.{NoCConfig, Port}
+import noc.config.NoCConfig
 
 /**
  * DeterministicRouting - Abstract base class for deterministic routing
@@ -13,7 +13,7 @@ abstract class DeterministicRouting(config: NoCConfig) extends RoutingPolicy(con
    * Select one port from possible ports (default selects the first available)
    */
   protected def selectPort(possiblePorts: Vec[Bool]): UInt = {
-    val portWidth = chisel3.util.log2Ceil(config.totalPorts)
+    val portWidth = chisel3.util.log2Ceil(config.portNum)
     val selected = Wire(UInt(portWidth.W))
 
     // Priority encoder: select the first port that is true

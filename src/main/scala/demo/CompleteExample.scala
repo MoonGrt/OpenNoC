@@ -57,7 +57,6 @@ class CompleteExample extends Module {
     vcNum = 2,
     bufferDepth = 4,
     nodeIdWidth = 8,
-    numPorts = 4,
     routingType = "XY",
     topologyType = "Mesh"
   )

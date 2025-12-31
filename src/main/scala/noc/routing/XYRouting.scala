@@ -15,7 +15,7 @@ import noc.config.{NoCConfig, Port}
  */
 class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) extends DeterministicRouting(config) {
   require(meshWidth > 0 && meshHeight > 0, "Mesh dimensions must be positive")
-  require(config.numPorts >= 4, "XY routing requires at least 4 ports (North, South, East, West)")
+  require(config.portNum >= 4, "XY routing requires at least 4 ports (North, South, East, West)")
 
   /**
    * Extract X coordinate from node ID
@@ -32,7 +32,7 @@ class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) extends Dete
   }
 
   override def getPossiblePorts(currentId: UInt, destId: UInt): Vec[Bool] = {
-    val possiblePorts = Wire(Vec(config.totalPorts, Bool()))
+    val possiblePorts = Wire(Vec(config.portNum, Bool()))
 
     val currentX = getX(currentId)
     val currentY = getY(currentId)
@@ -43,7 +43,7 @@ class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) extends Dete
     val yDiff = destY - currentY
 
     // Initialize all ports to false
-    for (i <- 0 until config.totalPorts) {
+    for (i <- 0 until config.portNum) {
       possiblePorts(i) := false.B
     }
 

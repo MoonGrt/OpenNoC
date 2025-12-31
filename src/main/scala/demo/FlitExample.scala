@@ -17,8 +17,7 @@ class FlitExample extends Module {
     dataWidth = 32,
     vcNum = 2,
     bufferDepth = 4,
-    nodeIdWidth = 8,
-    numPorts = 4
+    nodeIdWidth = 8
   )
 
   // Example 1: Create a head flit

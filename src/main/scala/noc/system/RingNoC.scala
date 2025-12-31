@@ -36,7 +36,8 @@ class RingNoC(config: NoCConfig, val numNodes: Int) extends NoC(config) {
   // Connect network interfaces to router Local ports
   for (i <- 0 until numNodes) {
     routers(i).io.routerId := i.U
-    routers(i).io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
+    // routers(i).io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
+
     // NI connected to router Local port
     routers(i).io.inPorts(noc.config.Port.Local.id) <> networkInterfaces(i).io.routerLink.out
     networkInterfaces(i).io.routerLink.in <> routers(i).io.outPorts(noc.config.Port.Local.id)
@@ -65,7 +66,6 @@ object RingNoC extends App {
     vcNum        = 2,  // 2 virtual channels
     bufferDepth  = 4,  // Larger buffer for ring topology
     nodeIdWidth  = 2,  // Support up to 4 nodes
-    numPorts     = 2,  // Ring: East + West
     routingType  = "Ring",
     topologyType = "Ring"
   )

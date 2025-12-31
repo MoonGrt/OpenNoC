@@ -2,7 +2,7 @@ package noc.routing
 
 import chisel3._
 import chisel3.util._
-import noc.config.{NoCConfig, Port}
+import noc.config.NoCConfig
 
 /**
  * RoutingPolicy - Abstract base class for routing policies

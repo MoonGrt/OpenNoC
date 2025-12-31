@@ -16,13 +16,12 @@ class CustomTopology(
   override val numNodes: Int,
   connections: Seq[(Int, Int, Int, Int)]
 ) extends NoCTopology(config) {
-
   require(numNodes > 0, "Number of nodes must be positive")
 
   // Build connection map
   private val connectionMap = connections.groupBy(_._1).mapValues(_.map(t => (t._2, t._3, t._4)))
 
-  override def getConnection(srcNodeId: Int, dstNodeId: Int): Option[noc.config.Port.Port] = {
+  override def getConnection(srcNodeId: Int, dstNodeId: Int): Option[noc.config.Port.port] = {
     connectionMap.get(srcNodeId).flatMap { conns =>
       conns.find(_._1 == dstNodeId).map { case (_, srcPort, _) =>
         noc.config.Port(srcPort)
@@ -30,7 +29,7 @@ class CustomTopology(
     }
   }
 
-  override def getNeighbors(nodeId: Int): Seq[(Int, noc.config.Port.Port)] = {
+  override def getNeighbors(nodeId: Int): Seq[(Int, noc.config.Port.port)] = {
     connectionMap.getOrElse(nodeId, Seq.empty).map { case (dstId, srcPort, _) =>
       (dstId, noc.config.Port(srcPort))
     }

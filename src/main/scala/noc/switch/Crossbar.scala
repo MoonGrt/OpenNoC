@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import noc.data.Flit
 import noc.config.NoCConfig
-import noc.arbiter.{NoCArbiter, RoundRobin}
+import noc.arbiter._
 
 /**
  * Crossbar - Crossbar switch
@@ -19,8 +19,11 @@ class Crossbar(config: NoCConfig, numInputs: Int, numOutputs: Int) extends Switc
   import config._
 
   // Create arbiter for each output port
-  val arbiters = Seq.fill(numOutputs) {
-    Module(new RoundRobin(config, numInputs))
+  val arbiters = Seq.fill(numOutputs) { config.routerConfig.switchArbiterType match {
+      case "RoundRobin" => Module(new RoundRobin(config, numInputs))
+      case "FixedPriority" => Module(new FixedPriority(config, numInputs))
+      case _ => throw new IllegalArgumentException(s"Unknown arbiter type: ${routerConfig.vcConfig.arbiterType}")
+    }
   }
 
   // Connect each input to all output arbiters

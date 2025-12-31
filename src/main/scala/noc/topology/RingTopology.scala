@@ -15,9 +15,9 @@ import noc.channel.{BiPipelineChannel}
  */
 class RingTopology(config: NoCConfig, override val numNodes: Int) extends NoCTopology(config) {
   require(numNodes > 0, "Number of nodes must be positive")
-  require(config.numPorts >= 2, "Ring topology requires at least 2 ports")
+  require(config.portNum >= 2, "Ring topology requires at least 2 ports")
 
-  override def getConnection(srcNodeId: Int, dstNodeId: Int): Option[Port.Port] = {
+  override def getConnection(srcNodeId: Int, dstNodeId: Int): Option[Port.port] = {
     val diff = (dstNodeId - srcNodeId + numNodes) % numNodes
 
     if (diff == 1 || diff == numNodes - 1) {
@@ -32,7 +32,7 @@ class RingTopology(config: NoCConfig, override val numNodes: Int) extends NoCTop
     }
   }
 
-  override def getNeighbors(nodeId: Int): Seq[(Int, Port.Port)] = {
+  override def getNeighbors(nodeId: Int): Seq[(Int, Port.port)] = {
     val leftNeighbor = (nodeId - 1 + numNodes) % numNodes
     val rightNeighbor = (nodeId + 1) % numNodes
 

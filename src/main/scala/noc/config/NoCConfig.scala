@@ -8,7 +8,6 @@ package noc.config
  * @param vcNum Number of virtual channels
  * @param bufferDepth Buffer depth for each virtual channel
  * @param nodeIdWidth Bit width of node ID
- * @param numPorts Number of ports per router (excluding Local port)
  * @param routingType Routing algorithm type
  * @param topologyType Topology type
  */
@@ -17,7 +16,6 @@ case class NoCConfig(
   vcNum: Int = 1,
   bufferDepth: Int = 4,
   nodeIdWidth: Int = 8,
-  numPorts: Int = 4,
   routingType: String = "XY",
   topologyType: String = "Mesh"
 ) {
@@ -25,23 +23,43 @@ case class NoCConfig(
   require(vcNum > 0, "Virtual channel number must be positive")
   require(bufferDepth > 0, "Buffer depth must be positive")
   require(nodeIdWidth > 0, "NodeId width must be positive")
-  require(numPorts > 0, "Number of ports must be positive")
 
   def maxNodes: Int = (1 << nodeIdWidth) - 1
-  def totalPorts: Int = numPorts + 1  // Including Local port
-  def portWidth: Int = chisel3.util.log2Ceil(totalPorts)
+  def portNum: Int = routerConfig.portConfig.portNum
+  def portWidth: Int = chisel3.util.log2Ceil(portNum)
   def vcIdWidth: Int = chisel3.util.log2Ceil(vcNum)
 
+  // Select the input port based on the topologyType.
+  val selectedPortConfig: Seq[Port.port] = topologyType match {
+    case "Ring"  => Port.dirEW
+    case "Mesh" => Port.dirEWNS
+    case "Torus" => Port.dirEWNS
+    case "Cube" => Port.dirEWNSUD
+    case _ => throw new IllegalArgumentException(s"Unknown topology type: $topologyType")
+  }
+
   // Create sub-configuration objects
-  val nodeIdConfig: NodeIdConfig = NodeIdConfig(nodeIdWidth)
-  val portConfig: PortConfig = PortConfig(numPorts)
-  val flitConfig: 
+  val flitConfig:
     FlitConfig = FlitConfig(
-      fields = Seq(
-        HeaderField(HeaderType.FlitType, 2),
+      headerFields = Seq(
+        HeaderField(HeaderType.FlitType, HeaderType.width),
         HeaderField(HeaderType.VcId,  vcIdWidth),
         HeaderField(HeaderType.DstId, nodeIdWidth)
       ),
       dataWidth = 32
+    )
+  val routerConfig:
+    RouterConfig = RouterConfig(
+      ports = selectedPortConfig,
+      routingPolicy = routingType,
+      bufferDepth = bufferDepth,
+      vcNum = vcNum,
+      vcArbiterType = "RoundRobin",
+      switchArbiterType = "RoundRobin"
+    )
+  val topologyConfig:
+    TopologyConfig = TopologyConfig(
+      topologyType = topologyType,
+      bufferDepth = bufferDepth
     )
 }

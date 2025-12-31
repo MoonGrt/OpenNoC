@@ -20,14 +20,14 @@ abstract class NoCTopology(val config: NoCConfig) {
    * @param dstNodeId Destination node ID
    * @return If direct connection exists, return Some(port direction), otherwise None
    */
-  def getConnection(srcNodeId: Int, dstNodeId: Int): Option[Port.Port]
+  def getConnection(srcNodeId: Int, dstNodeId: Int): Option[Port.port]
 
   /**
    * Get all neighbors of a node
    * @param nodeId Node ID
    * @return List of neighbor node IDs (including port direction)
    */
-  def getNeighbors(nodeId: Int): Seq[(Int, Port.Port)]
+  def getNeighbors(nodeId: Int): Seq[(Int, Port.port)]
 
   /**
    * Connect routers

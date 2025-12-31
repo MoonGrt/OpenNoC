@@ -41,7 +41,7 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
   // Connect network interfaces to router Local ports
   for (i <- 0 until numNodes) {
     routers(i).io.routerId := i.U
-    routers(i).io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
+    // routers(i).io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
 
     // NI connected to router Local port
     routers(i).io.inPorts(noc.config.Port.Local.id) <> networkInterfaces(i).io.routerLink.out
@@ -83,7 +83,6 @@ class MeshNoCGen extends Module {
     vcNum        = 1,  // 1 virtual channels
     bufferDepth  = 4,  // Larger buffer for ring topology
     nodeIdWidth  = 2,  // Support up to 4 nodes
-    numPorts     = 4,  // 4 ports (North, South, East, West) + Local
     routingType  = "XY",
     topologyType = "Mesh"
   )

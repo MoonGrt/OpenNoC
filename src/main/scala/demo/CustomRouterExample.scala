@@ -18,8 +18,7 @@ class CustomRouterExample extends Module {
     dataWidth = 32,
     vcNum = 2,
     bufferDepth = 4,
-    nodeIdWidth = 8,
-    numPorts = 4
+    nodeIdWidth = 8
   )
 
   // Example 1: Create router using RouterBuilder with XY routing
@@ -41,11 +40,11 @@ class CustomRouterExample extends Module {
   customRouter.io.routerId := 2.U
   directRouter.io.routerId := 3.U
 
-  // Set congestion info (for adaptive routing)
-  xyRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
-  adaptiveRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
-  customRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
-  directRouter.io.congestionInfo := VecInit(Seq.fill(config.totalPorts)(0.U(8.W)))
+  // // Set congestion info (for adaptive routing)
+  // xyRouter.io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
+  // adaptiveRouter.io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
+  // customRouter.io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
+  // directRouter.io.congestionInfo := VecInit(Seq.fill(config.portNum)(0.U(8.W)))
 }
 
 // object CustomRouterExample extends App {

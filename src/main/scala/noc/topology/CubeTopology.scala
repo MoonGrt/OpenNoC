@@ -7,70 +7,83 @@ import noc.router.RouterIO
 import noc.channel.{BiNoCChannel, BiPipelineChannel}
 
 /**
- * MeshTopology - 2D Mesh topology
- * Nodes arranged in a grid, each node connected to four neighbors (up, down, left, right)
+ * CubeTopology - 3D Cube topology
+ * Nodes arranged in a 3D grid, each node connected to six neighbors (up, down, left, right, front, back)
  *
  * @param config NoC configuration
  * @param width Mesh width (number of nodes in X direction)
  * @param height Mesh height (number of nodes in Y direction)
+ * @param depth Mesh depth (number of nodes in Z direction)
  */
-class MeshTopology(config: NoCConfig, val width: Int, val height: Int) extends NoCTopology(config) {
-  require(width > 0 && height > 0, "Mesh dimensions must be positive")
-  require(config.portNum >= 4, "Mesh topology requires at least 4 ports")
+class CubeTopology(config: NoCConfig, val width: Int, val height: Int, val depth: Int) extends NoCTopology(config) {
+  require(width > 0 && height > 0 && depth > 0, "Cube dimensions must be positive")
+  require(config.portNum >= 6, "Cube topology requires at least 6 ports")
 
-  override def numNodes: Int = width * height
+  override def numNodes: Int = width * height * depth
 
   /**
-   * Convert node ID to coordinates
+   * Convert node ID to coordinates (x, y, z)
    */
-  private def nodeIdToCoord(nodeId: Int): (Int, Int) = {
+  private def nodeIdToCoord(nodeId: Int): (Int, Int, Int) = {
     val x = nodeId % width
-    val y = nodeId / width
-    (x, y)
+    val y = (nodeId / width) % height
+    val z = nodeId / (width * height)
+    (x, y, z)
   }
 
   /**
-   * Convert coordinates to node ID
+   * Convert coordinates (x, y, z) to node ID
    */
-  private def coordToNodeId(x: Int, y: Int): Int = {
-    y * width + x
+  private def coordToNodeId(x: Int, y: Int, z: Int): Int = {
+    z * width * height + y * width + x
   }
 
   override def getConnection(srcNodeId: Int, dstNodeId: Int): Option[Port.port] = {
-    val (srcX, srcY) = nodeIdToCoord(srcNodeId)
-    val (dstX, dstY) = nodeIdToCoord(dstNodeId)
+    val (srcX, srcY, srcZ) = nodeIdToCoord(srcNodeId)
+    val (dstX, dstY, dstZ) = nodeIdToCoord(dstNodeId)
 
     val dx = dstX - srcX
     val dy = dstY - srcY
+    val dz = dstZ - srcZ
 
-    if (dx == 1 && dy == 0) {
+    if (dx == 1 && dy == 0 && dz == 0) {
       Some(Port.East)
-    } else if (dx == -1 && dy == 0) {
+    } else if (dx == -1 && dy == 0 && dz == 0) {
       Some(Port.West)
-    } else if (dx == 0 && dy == 1) {
+    } else if (dx == 0 && dy == 1 && dz == 0) {
       Some(Port.North)
-    } else if (dx == 0 && dy == -1) {
+    } else if (dx == 0 && dy == -1 && dz == 0) {
       Some(Port.South)
+    } else if (dx == 0 && dy == 0 && dz == 1) {
+      Some(Port.Up)
+    } else if (dx == 0 && dy == 0 && dz == -1) {
+      Some(Port.Down)
     } else {
       None
     }
   }
 
   override def getNeighbors(nodeId: Int): Seq[(Int, Port.port)] = {
-    val (x, y) = nodeIdToCoord(nodeId)
+    val (x, y, z) = nodeIdToCoord(nodeId)
     var neighbors = Seq.empty[(Int, Port.port)]
 
     if (x > 0) {
-      neighbors :+= (coordToNodeId(x - 1, y), Port.West)
+      neighbors :+= (coordToNodeId(x - 1, y, z), Port.West)
     }
     if (x < width - 1) {
-      neighbors :+= (coordToNodeId(x + 1, y), Port.East)
+      neighbors :+= (coordToNodeId(x + 1, y, z), Port.East)
     }
     if (y > 0) {
-      neighbors :+= (coordToNodeId(x, y - 1), Port.South)
+      neighbors :+= (coordToNodeId(x, y - 1, z), Port.South)
     }
     if (y < height - 1) {
-      neighbors :+= (coordToNodeId(x, y + 1), Port.North)
+      neighbors :+= (coordToNodeId(x, y + 1, z), Port.North)
+    }
+    if (z > 0) {
+      neighbors :+= (coordToNodeId(x, y, z - 1), Port.Down)
+    }
+    if (z < depth - 1) {
+      neighbors :+= (coordToNodeId(x, y, z + 1), Port.Up)
     }
 
     neighbors
@@ -80,10 +93,10 @@ class MeshTopology(config: NoCConfig, val width: Int, val height: Int) extends N
     require(routers.length == numNodes, s"Expected ${numNodes} routers, got ${routers.length}")
 
     /*************************************************
-     * 1. Default: Disable all Mesh direction ports (for edge routers)
+     * 1. Default: Disable all Cube direction ports (for edge routers)
      *************************************************/
     for (r <- routers) {
-      for (p <- Port.dirEWNS) { // East/West/North/South
+      for (p <- Port.dirEWNSUD) { // East/West/North/South/Up/Down
         // inPorts: Without upstream, never valid
         r.inPorts(p.id).valid := false.B
         r.inPorts(p.id).bits  := 0.U.asTypeOf(r.inPorts(p.id).bits)
@@ -93,7 +106,7 @@ class MeshTopology(config: NoCConfig, val width: Int, val height: Int) extends N
     }
 
     /*************************************************
-     * 2. Establish a channel connection between adjacent routers in the mesh network.
+     * 2. Establish a channel connection between adjacent routers in the cube network.
      *************************************************/
     // Create channel connections
     val channels = collection.mutable.Map[(Int, Int), BiNoCChannel]()
