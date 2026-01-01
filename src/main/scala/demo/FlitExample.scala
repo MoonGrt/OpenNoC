@@ -23,6 +23,7 @@ class FlitExample extends Module {
   // Example 1: Create a head flit
   val headFlit = Flit.head(
     config = config.flitConfig,
+    srcId = 1.U,
     dstId = 5.U,
     data = "h12345678".U(32.W),
     vcId = 0.U
@@ -45,6 +46,7 @@ class FlitExample extends Module {
   // Example 4: Create a single-flit packet (headTail)
   val singleFlit = Flit.headTail(
     config = config.flitConfig,
+    srcId = 1.U,
     dstId = 5.U,
     data = "hDEADBEEF".U(32.W),
     vcId = 0.U
@@ -66,6 +68,7 @@ class FlitExample extends Module {
   // Example 8: Create a single-flit packet
   val singleFlitPacket = Packet.singleFlit(
     config = config,
+    srcId = 1.U,
     dstId = 5.U,
     data = "hCAFEBABE".U(32.W),
     vcId = 0.U

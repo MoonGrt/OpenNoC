@@ -119,7 +119,7 @@ class StreamSource(config: NoCConfig) extends Source(config) {
         sendCounter := 1.U
         // Send head flit
         io.flitOut.valid := true.B
-        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, io.destId, sendQueue.io.deq.bits)
+        io.flitOut.bits := Flit.head(flitConfig, vcId = 0.U, io.nodeId, io.destId, sendQueue.io.deq.bits)
         sendQueue.io.deq.ready := io.flitOut.ready
       }
     }
@@ -242,7 +242,7 @@ class CounterSource(config: NoCConfig, countLimit: Int = 1000) extends Source(co
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, io.destId, counter, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, vcId = 0.U, io.destId, counter, 0.U)
 
       when(io.flitOut.ready) {
         counter := counter + 1.U
@@ -298,7 +298,7 @@ class BurstSource(config: NoCConfig, burstSize: Int = 8) extends Source(config) 
         dataReg := dataQueue.io.deq.bits
         // Send head flit
         io.flitOut.valid := true.B
-        io.flitOut.bits := Flit.head(flitConfig, io.nodeId, io.destId, dataQueue.io.deq.bits)
+        io.flitOut.bits := Flit.head(flitConfig, vcId = 0.U, io.nodeId, io.destId, dataQueue.io.deq.bits)
         dataQueue.io.deq.ready := io.flitOut.ready
       }
     }
@@ -358,7 +358,7 @@ class PatternSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, sendDestId, io.pattern, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, vcId = 0.U, sendDestId, io.pattern, 0.U)
 
       when(io.flitOut.ready) {
         sendState := 0.U
@@ -427,7 +427,7 @@ class RandomSource(config: NoCConfig) extends Source(config) {
     }
     is(1.U) {
       io.flitOut.valid := true.B
-      io.flitOut.bits := Flit.headTail(flitConfig, io.destId, lfsr, 0.U)
+      io.flitOut.bits := Flit.headTail(flitConfig, vcId = 0.U, io.destId, lfsr, 0.U)
 
       when(io.flitOut.ready) {
         lfsr := lfsrNext(lfsr)
