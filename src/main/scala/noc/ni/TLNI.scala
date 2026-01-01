@@ -66,7 +66,7 @@ class TLNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, node
       req.opcode
     )
     io.routerLink.out.valid := true.B
-    io.routerLink.out.bits := Flit.headTail(flitConfig, nodeId.U, req.address(31, 24), flitData)
+    io.routerLink.out.bits := Flit.headTail(flitConfig, vcId = 0.U, nodeId.U, req.address(31, 24), flitData)
     sendQueue.io.deq.ready := io.routerLink.out.ready
   }
 

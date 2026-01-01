@@ -24,6 +24,8 @@ class Flit(val config: FlitConfig) extends Bundle {
   def flitType: UInt = getField(HeaderType.FlitType)
   /** Extract virtual channel ID */
   def vcId: UInt = getField(HeaderType.VcId)
+  /** Extract source node ID (lowest nodeIdWidth bits) */
+  def srcId: UInt = getField(HeaderType.SrcId)
   /** Extract destination node ID (lowest nodeIdWidth bits) */
   def dstId: UInt = getField(HeaderType.DstId)
 
@@ -41,8 +43,12 @@ class Flit(val config: FlitConfig) extends Bundle {
     require(config.bitsMap.contains(t), s"Header $t not present in this flit format")
 
     val width = config.bitsMap(t).Width
-    val offset = config.bitsMap(t).Offset
-    header(offset + width - 1, offset)
+    if (width == 0) {
+      0.U
+    } else {
+      val offset = config.bitsMap(t).Offset
+      header(offset + width - 1, offset)
+    }
   }
 }
 
@@ -61,30 +67,28 @@ object Flit {
           config.bitsMap.contains(t),
           s"Header field $t not present in this FlitConfig"
         )
-
-        val bits   = config.bitsMap(t)
-        val masked = value(bits.Width - 1, 0) << bits.Offset
+        val bits = config.bitsMap(t)
+        val masked = if (bits.Width > 0) {
+          value(bits.Width - 1, 0) << bits.Offset
+        } else {
+          0.U
+        }
         acc | masked
     }
-
     Cat(header, data)
   }
 
   /**
    * Create a head flit
    */
-  def head(
-    config: FlitConfig,
-    vcId: UInt = 0.U,
-    dstId: UInt,
-    data: UInt
-  ): Flit = {
+  def head(config: FlitConfig, vcId: UInt = 0.U, srcId: UInt, dstId: UInt, data: UInt): Flit = {
     val flit = Wire(new Flit(config))
     flit.flit := packWithConfig(
       config,
       Map(
         HeaderType.FlitType -> FlitType.Head.id.U,
         HeaderType.VcId     -> vcId,
+        HeaderType.SrcId    -> srcId,
         HeaderType.DstId    -> dstId
       ),
       data
@@ -95,11 +99,7 @@ object Flit {
   /**
    * Create a body flit
    */
-  def body(
-    config: FlitConfig,
-    vcId: UInt = 0.U,
-    data: UInt
-  ): Flit = {
+  def body(config: FlitConfig, vcId: UInt = 0.U, data: UInt): Flit = {
     val flit = Wire(new Flit(config))
     flit.flit := packWithConfig(
       config,
@@ -115,11 +115,7 @@ object Flit {
   /**
    * Create a tail flit
    */
-  def tail(
-    config: FlitConfig,
-    vcId: UInt = 0.U,
-    data: UInt
-  ): Flit = {
+  def tail(config: FlitConfig, vcId: UInt = 0.U, data: UInt): Flit = {
     val flit = Wire(new Flit(config))
     flit.flit := packWithConfig(
       config,
@@ -135,18 +131,14 @@ object Flit {
   /**
    * Create a single-flit packet (head-tail)
    */
-  def headTail(
-    config: FlitConfig,
-    vcId: UInt = 0.U,
-    dstId: UInt,
-    data: UInt
-  ): Flit = {
+  def headTail(config: FlitConfig, vcId: UInt = 0.U, srcId: UInt, dstId: UInt, data: UInt): Flit = {
     val flit = Wire(new Flit(config))
     flit.flit := packWithConfig(
       config,
       Map(
         HeaderType.FlitType -> FlitType.HeadTail.id.U,
         HeaderType.VcId     -> vcId,
+        HeaderType.SrcId    -> srcId,
         HeaderType.DstId    -> dstId
       ),
       data

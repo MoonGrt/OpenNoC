@@ -52,7 +52,7 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
         sendCounter := 1.U
         // Send head flit
         io.routerLink.out.valid := true.B
-        io.routerLink.out.bits := Flit.head(flitConfig, nodeId.U, io.destId, sendQueue.io.deq.bits)
+        io.routerLink.out.bits := Flit.head(flitConfig, vcId = 0.U, nodeId.U, io.destId, sendQueue.io.deq.bits)
         sendQueue.io.deq.ready := io.routerLink.out.ready
       }
     }

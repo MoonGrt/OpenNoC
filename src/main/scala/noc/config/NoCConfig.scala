@@ -42,8 +42,9 @@ case class NoCConfig(
   val flitConfig:
     FlitConfig = FlitConfig(
       headerFields = Seq(
-        HeaderField(HeaderType.FlitType, HeaderType.width),
+        HeaderField(HeaderType.FlitType, FlitType.width),
         HeaderField(HeaderType.VcId,  vcIdWidth),
+        HeaderField(HeaderType.SrcId, nodeIdWidth),
         HeaderField(HeaderType.DstId, nodeIdWidth)
       ),
       dataWidth = 32

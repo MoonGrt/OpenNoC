@@ -65,6 +65,24 @@ class MeshNoC(config: NoCConfig, val width: Int, val height: Int) extends NoC(co
   override def getTopology: NoCTopology = topology
 }
 
+// object MeshNoC extends App {
+//   val config = NoCConfig(
+//     dataWidth    = 32,
+//     vcNum        = 1,  // 1 virtual channels
+//     bufferDepth  = 4,  // Larger buffer for ring topology
+//     nodeIdWidth  = 2,  // Support up to 4 nodes
+//     routingType  = "XY",
+//     topologyType = "Mesh"
+//   )
+
+//   (new chisel3.stage.ChiselStage).emitVerilog(
+//     new MeshNoC(config, width = 2, height = 2),
+//     Array(
+//       "--target-dir", "rtl",
+//       "--emission-options=disableMemRandomization,disableRegisterRandomization"
+//     )
+//   )
+// }
 
 /**
  * MeshNoCGen - Generates a 2D Mesh NoC system
@@ -89,6 +107,8 @@ class MeshNoCGen extends Module {
 
   // Create a 2x2 Mesh NoC (4 nodes)
   val meshNoC = Module(new MeshNoC(config, width = 2, height = 2))
+  // Prohibit FIRRTL optimization removal
+  meshNoC.io.elements.foreach { case (_, sig) => dontTouch(sig) }
 
   // Example
   // Connect processing elements to network interfaces
@@ -96,6 +116,9 @@ class MeshNoCGen extends Module {
     // Create processing elements
     val source = Module(new RandomSourceStreamNI(config))
     val sink = Module(new FlitSinkStreamNI(config))
+    // Prohibit FIRRTL optimization removal
+    source.io.elements.foreach { case (_, sig) => dontTouch(sig) }
+    sink.io.elements.foreach { case (_, sig) => dontTouch(sig) }
 
     // Connect processing elements to network interfaces
     source.io.enable := true.B
