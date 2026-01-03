@@ -7,7 +7,8 @@ lazy val root = (project in file("."))
     name := "OpenNoC",
     libraryDependencies ++= Seq(
       "edu.berkeley.cs" %% "chisel3" % "3.5.3",
-      "edu.berkeley.cs" %% "chiseltest" % "0.5.3" % "test"
+      "edu.berkeley.cs" %% "chiseltest" % "0.5.3" % "test",
+      "edu.berkeley.cs" %% "rocketchip" % "1.2.6"
     ),
     scalacOptions ++= Seq(
       "-Xsource:2.11",
