@@ -5,17 +5,19 @@ import chisel3.util._
 import noc.config.{NoCConfig, Port}
 
 /**
- * XYRouting - XY routing algorithm
- * Routes first along X direction, then along Y direction
+ * XYRouting - XY or YX routing algorithm based on configuration
+ * Routes along specified order: either XY (X first, then Y) or YX (Y first, then X)
  * Suitable for 2D Mesh topology
  *
  * @param config NoC configuration
  * @param meshWidth Mesh width (number of nodes in X direction)
  * @param meshHeight Mesh height (number of nodes in Y direction)
+ * @param routeOrder The routing order: "XY" or "YX"
  */
-class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) extends DeterministicRouting(config) {
+class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int, routeOrder: String = "XY") extends DeterministicRouting(config) {
   require(meshWidth > 0 && meshHeight > 0, "Mesh dimensions must be positive")
   require(config.portNum >= 4, "XY routing requires at least 4 ports (North, South, East, West)")
+  require(routeOrder == "XY" || routeOrder == "YX", "Invalid routeOrder. Should be 'XY' or 'YX'")
 
   /**
    * Extract X coordinate from node ID
@@ -47,27 +49,54 @@ class XYRouting(config: NoCConfig, meshWidth: Int, meshHeight: Int) extends Dete
       possiblePorts(i) := false.B
     }
 
-    // XY routing: X first, then Y
-    when(xDiff === 0.S.asUInt) {
-      // Same X coordinate, route along Y direction
-      when(yDiff === 0.S.asUInt) {
-        // Reached destination, use Local port
-        possiblePorts(Port.Local.id) := true.B
-      }.elsewhen(yDiff.asSInt > 0.S) {
-        // Need to go north
-        possiblePorts(Port.North.id) := true.B
+    // Routing based on the routeOrder ("XY" or "YX")
+    if (routeOrder == "XY") {
+      // XY routing: X first, then Y
+      when(xDiff === 0.S.asUInt) {
+        // Same X coordinate, route along Y direction
+        when(yDiff === 0.S.asUInt) {
+          // Reached destination, use Local port
+          possiblePorts(Port.Local.id) := true.B
+        }.elsewhen(yDiff.asSInt > 0.S) {
+          // Need to go north
+          possiblePorts(Port.North.id) := true.B
+        }.otherwise {
+          // Need to go south
+          possiblePorts(Port.South.id) := true.B
+        }
       }.otherwise {
-        // Need to go south
-        possiblePorts(Port.South.id) := true.B
+        // Different X coordinate, route along X direction first
+        when(xDiff.asSInt > 0.S) {
+          // Need to go east
+          possiblePorts(Port.East.id) := true.B
+        }.otherwise {
+          // Need to go west
+          possiblePorts(Port.West.id) := true.B
+        }
       }
-    }.otherwise {
-      // Different X coordinate, route along X direction first
-      when(xDiff.asSInt > 0.S) {
-        // Need to go east
-        possiblePorts(Port.East.id) := true.B
+    } else {
+      // YX routing: Y first, then X
+      when(yDiff === 0.S.asUInt) {
+        // Same Y coordinate, route along X direction
+        when(xDiff === 0.S.asUInt) {
+          // Reached destination, use Local port
+          possiblePorts(Port.Local.id) := true.B
+        }.elsewhen(xDiff.asSInt > 0.S) {
+          // Need to go east
+          possiblePorts(Port.East.id) := true.B
+        }.otherwise {
+          // Need to go west
+          possiblePorts(Port.West.id) := true.B
+        }
       }.otherwise {
-        // Need to go west
-        possiblePorts(Port.West.id) := true.B
+        // Different Y coordinate, route along Y direction first
+        when(yDiff.asSInt > 0.S) {
+          // Need to go north
+          possiblePorts(Port.North.id) := true.B
+        }.otherwise {
+          // Need to go south
+          possiblePorts(Port.South.id) := true.B
+        }
       }
     }
 

@@ -73,6 +73,30 @@
 <p align="right">(<a href="#top">top</a>)</p>
 
 
+<!-- 路线图 -->
+## 路线图
+
+- [ ] Basic
+  - Components:
+    - Flit
+    - Arbiter: RoundRobin; FixedPriority;
+    - Topology: Ring; Mesh; Torus; Cube;
+    - Routing: Deterministic(Ring; XY/YX) Adaptive;
+    - Channel: Wire; Buffer; Pipeline;
+    - NI: Stream
+  - Module: Router; Switch; VC
+  - TODO: AXINI; TLNI
+- [ ] Advanced
+  - TODO: Flit: QoS; Priority; Credit; CRC;
+  - TODO: Arbiter: WeightedRoundRobin;
+  - TODO: Topology: Tree; Hierarchical;
+  - TODO: Routing: ECMP;
+
+到 [open issues](https://github.com/MoonGrt/OpenNoC/issues) 页查看所有请求的功能 （以及已知的问题）。
+
+<p align="right">(<a href="#top">顶部</a>)</p>
+
+
 
 <!-- 贡献 -->
 ## 贡献
@@ -101,9 +125,9 @@
 <!-- 联系我们 -->
 ## 联系我们
 
-你的名字 - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
+MoonGrt - 1561145394@qq.com
+Project Link: [MoonGrt/OpenNoC](https://github.com/MoonGrt/OpenNoC)
 
-项目链接: [https://github.com/github_username/repo_name](https://github.com/github_username/repo_name)
 <p align="right">(<a href="#top">top</a>)</p>
 
 

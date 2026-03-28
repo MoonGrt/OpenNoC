@@ -70,6 +70,30 @@
 
 
 
+<!-- ROADMAP -->
+## Roadmap
+
+- [ ] Basic
+  - Components:
+    - Flit
+    - Arbiter: RoundRobin; FixedPriority;
+    - Topology: Ring; Mesh; Torus; Cube;
+    - Routing: Deterministic(Ring; XY/YX) Adaptive;
+    - Channel: Wire; Buffer; Pipeline;
+    - NI: Stream
+  - Module: Router; Switch; VC
+  - TODO: AXINI; TLNI
+- [ ] Advanced
+  - TODO: Flit: QoS; Priority; Credit; CRC;
+  - TODO: Arbiter: WeightedRoundRobin;
+  - TODO: Topology: Tree; Hierarchical;
+  - TODO: Routing: ECMP;
+
+See the [open issues](https://github.com/MoonGrt/OpenNoC/issues) for a full list of proposed features (and known issues).
+
+<p align="right">(<a href="#top">back to top</a>)</p>
+
+
 <!-- CONTRIBUTING -->
 ## Contributing
 
