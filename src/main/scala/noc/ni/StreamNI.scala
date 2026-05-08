@@ -1,7 +1,7 @@
 package noc.ni
 
 import chisel3._
-import chisel3.util._
+import chisel3.util.{Decoupled, Queue, switch, is}
 import noc.data.{Flit, Packet}
 import noc.config.NoCConfig
 
@@ -116,22 +116,24 @@ class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, 
  * StreamNIGen - Stream network interface generator
  *
  */
-// object StreamNIGen extends App {
-//   val config = NoCConfig(
-//     dataWidth    = 32,
-//     vcNum        = 1,  // Single virtual channel
-//     bufferDepth  = 4,  // Larger buffer for ring topology
-//     nodeIdWidth  = 2,  // Support up to 4 nodes
-//     numPorts     = 2,  // Ring: East + West
-//     routingType  = "Ring",
-//     topologyType = "Ring"
-//   )
+object StreamNIGen extends App {
+  val config = NoCConfig(
+    dataWidth    = 32,
+    vcNum        = 1,  // Single virtual channel
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
+    routingType  = "Ring",
+    topologyType = "Ring"
+  )
 
-//   (new chisel3.stage.ChiselStage).emitVerilog(
-//     new StreamNI(config, 0),
-//     Array(
-//       "--target-dir", "rtl",
-//       "--emission-options=disableMemRandomization,disableRegisterRandomization"
-//     )
-//   )
-// }
+  val firtoolOptions = Array(
+    "--lowering-options=" + List(
+      // make yosys happy
+      // see https://github.com/llvm/circt/blob/main/docs/VerilogGeneration.md
+      "disallowLocalVariables",
+      "disallowPackedArrays",
+      "locationInfoStyle=wrapInAtSquareBracket"
+    ).reduce(_ + "," + _)
+  )
+  circt.stage.ChiselStage.emitSystemVerilogFile(new StreamNI(config, 0), args, firtoolOptions)
+}

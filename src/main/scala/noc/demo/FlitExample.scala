@@ -1,4 +1,4 @@
-package demo
+package noc.demo
 
 import chisel3._
 import noc.config.NoCConfig

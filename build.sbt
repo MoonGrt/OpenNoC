@@ -1,22 +1,24 @@
-ThisBuild / scalaVersion := "2.12.13"
-ThisBuild / version      := "0.0.0"
+ThisBuild / scalaVersion := "2.13.14"
+ThisBuild / version      := "0.1.0"
 ThisBuild / organization := "com.github.moongrt"
+
+val chiselVersion = "7.0.0-M2"
 
 lazy val root = (project in file("."))
   .settings(
-    name := "OpenNoC",
+    name := "chisel",
+    Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
+    Test / scalaSource := baseDirectory.value / "src" / "test" / "scala",
     libraryDependencies ++= Seq(
-      "edu.berkeley.cs" %% "chisel3" % "3.5.3",
-      "edu.berkeley.cs" %% "chiseltest" % "0.5.3" % "test",
-      "edu.berkeley.cs" %% "rocketchip" % "1.2.6"
+      "org.chipsalliance" %% "chisel" % chiselVersion,
+      "org.scalatest" %% "scalatest" % "3.2.19" % "test",
     ),
     scalacOptions ++= Seq(
-      "-Xsource:2.11",
       "-language:reflectiveCalls",
       "-deprecation",
       "-feature",
       "-Xcheckinit",
+      "-Ymacro-annotations",
     ),
-    addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % "3.5.3" cross CrossVersion.full),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
+    addCompilerPlugin("org.chipsalliance" % "chisel-plugin" % chiselVersion cross CrossVersion.full),
   )

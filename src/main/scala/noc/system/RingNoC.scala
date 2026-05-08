@@ -1,7 +1,7 @@
 package noc.system
 
 import chisel3._
-import chisel3.util._
+import chisel3.util.Decoupled
 import noc.config.NoCConfig
 import noc.router.{Router, RouterBuilder, RouterIO}
 import noc.ni.{NetworkInterface, StreamNI}
@@ -130,6 +130,18 @@ class RingNoCGen extends Module {
   }
 }
 
+/**
+ * Generate System Verilog sources
+ */
 object RingNoCGen extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new RingNoCGen, Array("--target-dir", "rtl"))
+  val firtoolOptions = Array(
+    "--lowering-options=" + List(
+      // make yosys happy
+      // see https://github.com/llvm/circt/blob/main/docs/VerilogGeneration.md
+      "disallowLocalVariables",
+      "disallowPackedArrays",
+      "locationInfoStyle=wrapInAtSquareBracket"
+    ).reduce(_ + "," + _)
+  )
+  circt.stage.ChiselStage.emitSystemVerilogFile(new RingNoCGen, args, firtoolOptions)
 }

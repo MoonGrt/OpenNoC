@@ -1,7 +1,7 @@
-package demo
+package noc.demo
 
 import chisel3._
-import chisel3.util._
+import chisel3.util.{Decoupled, switch, is}
 import noc.config.NoCConfig
 import noc.system.MeshNoC
 import noc.ni.StreamNI
@@ -88,9 +88,18 @@ class CompleteExample extends Module {
   }
 }
 
-// object CompleteExample extends App {
-//   (new chisel3.stage.ChiselStage).emitVerilog(new CompleteExample, Array("--target-dir", "rtl"))
-// }
-
-
-
+/**
+ * Generate SystemVerilog sources
+ */
+object CompleteExample extends App {
+  val firtoolOptions = Array(
+    "--lowering-options=" + List(
+      // make yosys happy
+      // see https://github.com/llvm/circt/blob/main/docs/VerilogGeneration.md
+      "disallowLocalVariables",
+      "disallowPackedArrays",
+      "locationInfoStyle=wrapInAtSquareBracket"
+    ).reduce(_ + "," + _)
+  )
+  circt.stage.ChiselStage.emitSystemVerilogFile(new CompleteExample, args, firtoolOptions)
+}
