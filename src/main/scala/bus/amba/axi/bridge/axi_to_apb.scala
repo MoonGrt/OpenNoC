@@ -12,7 +12,7 @@ import chisel3.util._
 class AxiLiteToApbBridge(p: ApbParams) extends Module {
   private val lp = AxiLiteParams(p.addrBits, p.dataBits)
   val io = IO(new Bundle {
-    val axi = new AxiLiteSlavePort(lp)
+    val axi = new AXI4LiteSlaveBundle(lp)
     val apb = new ApbMasterIO(p)
   })
 

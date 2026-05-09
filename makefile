@@ -1,14 +1,15 @@
 BUILD_TOOL ?= mill
-RTL_DIR = rtl
+TARGET 	   ?= bus.demo.Axi4Ram
+RTL_DIR    := rtl
 
 ifeq ($(BUILD_TOOL), mill)
 	RUN_TEST = mill -i chisel.test
-	RUN_MAIN = mill -i chisel.runMain bus.demo.GCD --target-dir $(RTL_DIR)
+	RUN_MAIN = mill -i chisel.runMain $(TARGET) --target-dir $(RTL_DIR)
 	HELP_CMD = mill --help
 	CLEAN_CMD = -mill clean
 else ifeq ($(BUILD_TOOL), sbt)
 	RUN_TEST = sbt test
-	RUN_MAIN = sbt "runMain bus.demo.GCD --target-dir $(RTL_DIR)"
+	RUN_MAIN = sbt "runMain $(TARGET) --target-dir $(RTL_DIR)"
 	HELP_CMD = sbt help
 	CLEAN_CMD = -sbt clean
 else

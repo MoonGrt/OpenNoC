@@ -7,7 +7,7 @@ import chisel3.util._
 /** Word-aligned AXI4-Lite slave with a register file. */
 class AxiLiteRegSlave(p: AxiLiteParams, nWords: Int) extends Module {
   val io = IO(new Bundle {
-    val axi = new AxiLiteSlavePort(p)
+    val axi = new AXI4LiteSlaveBundle(p)
   })
 
   private val byteShift = log2Ceil(p.dataBits / 8)

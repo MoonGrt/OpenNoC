@@ -9,8 +9,8 @@ import chisel3.util._
 class AxiLiteToAxi4(pLite: AxiLiteParams, pFull: AxiParams) extends Module {
   require(pLite.addrBits == pFull.addrBits && pLite.dataBits == pFull.dataBits)
   val io = IO(new Bundle {
-    val lite = new AxiLiteSlavePort(pLite)
-    val full = new AxiMasterPort(pFull)
+    val lite = new AXI4LiteSlaveBundle(pLite)
+    val full = new AXI4Bundle(pFull)
   })
 
   val id = 0.U(pFull.idBits.W)
@@ -27,12 +27,14 @@ class AxiLiteToAxi4(pLite: AxiLiteParams, pFull: AxiParams) extends Module {
   io.full.aw.bits.prot   := io.lite.aw.bits.prot
   io.full.aw.bits.qos    := 0.U
   io.full.aw.bits.region := 0.U
+  io.full.aw.bits.user   := 0.U
 
   io.full.w.valid     := io.lite.w.valid
   io.lite.w.ready     := io.full.w.ready
   io.full.w.bits.data := io.lite.w.bits.data
   io.full.w.bits.strb := io.lite.w.bits.strb
   io.full.w.bits.last := true.B
+  io.full.w.bits.user := 0.U
 
   io.lite.b.valid     := io.full.b.valid
   io.full.b.ready     := io.lite.b.ready
@@ -50,6 +52,7 @@ class AxiLiteToAxi4(pLite: AxiLiteParams, pFull: AxiParams) extends Module {
   io.full.ar.bits.prot   := io.lite.ar.bits.prot
   io.full.ar.bits.qos    := 0.U
   io.full.ar.bits.region := 0.U
+  io.full.ar.bits.user   := 0.U
 
   io.lite.r.valid     := io.full.r.valid
   io.full.r.ready     := io.lite.r.ready

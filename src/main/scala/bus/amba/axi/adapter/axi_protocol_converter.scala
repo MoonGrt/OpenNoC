@@ -7,8 +7,8 @@ import chisel3.util._
 /** No-op AXI4 protocol shim (placeholder for downsizing / Lite bridges). */
 class AxiProtocolConverter(p: AxiParams) extends Module {
   val io = IO(new Bundle {
-    val in  = Flipped(new AxiSlavePort(p))
-    val out = new AxiSlavePort(p)
+    val in  = Flipped(new AXI4SlaveBundle(p))
+    val out = new AXI4SlaveBundle(p)
   })
   io.out <> io.in
 }

@@ -8,7 +8,7 @@ import chisel3.util._
 class AxiLiteRegIf(p: AxiLiteParams, nCtl: Int) extends Module {
   require(nCtl > 0)
   val io = IO(new Bundle {
-    val axi = new AxiLiteSlavePort(p)
+    val axi = new AXI4LiteSlaveBundle(p)
     val ctl = Output(Vec(nCtl, UInt(p.dataBits.W)))
   })
 

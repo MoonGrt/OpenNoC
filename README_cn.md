@@ -39,6 +39,7 @@
     <li><a href="#关于本项目">关于本项目</a></li>
     <li><a href="#编译与测试">编译与测试</a></li>
     <li><a href="#目录结构">目录结构</a></li>
+    <li><a href="#noc组件">NoC组件</a></li>
     <li><a href="#命令式主机">命令式主机</a></li>
     <li><a href="#仿真">仿真</a></li>
     <li><a href="#路线图">路线图</a></li>
@@ -70,6 +71,7 @@ OpenNoC 是一个 **Chisel 7** 总线相关 RTL 积木库，便于在自定义�
 - **AXI4 / AXI4-Lite**：通道 Bundle、简单寄存器从机、1:1 交叉开关、ID 重映射、流 FIFO、桥（如 AXI-Lite → APB、AXI-Lite → AXI4 单拍主机侧）。
 - **APB**：显式 Master/Slave IO、地址译码、寄存器从机、示例子系统。
 - **AHB**：寄存器从机与更大互连的桩（持续完善中）。
+- **NoC**（`src/main/scala/noc`）：可复用 NoC 组件，覆盖拓扑、路由、路由器/交换结构、通道和 NI 等模块。
 - **其它**（`fabric`、`wishbone`、`tilelink`、`avalon` 等）：最小桩保证整库可编译，可按需扩展。
 
 <p align="right">(<a href="#top">top</a>)</p>
@@ -91,11 +93,24 @@ sbt test
 
 | 路径 | 说明 |
 |------|------|
-| `src/main/scala/amba/axi/` | AXI4、AXI-Lite、AXI-Stream、桥、`host/` 命令式主机 |
-| `src/main/scala/amba/apb/` | APB IO、从机、译码、`ApbMasterHost` |
-| `src/main/scala/amba/ahb/` | AHB IO 与寄存器从机 |
-| `src/main/scala/util/` | 队列、计数器等小工具 |
-| `src/test/scala/amba/` | 综合前 elaboration 测试 |
+| `src/main/scala/bus/amba/axi/` | AXI4、AXI-Lite、AXI-Stream、桥、`host/` 命令式主机 |
+| `src/main/scala/bus/amba/apb/` | APB IO、从机、译码、`ApbMasterHost` |
+| `src/main/scala/bus/amba/ahb/` | AHB IO 与寄存器从机 |
+| `src/main/scala/noc/` | NoC 模块：flit/packet、路由、拓扑、router/switch、NI 与系统示例 |
+| `src/main/scala/bus/util/` | 队列、计数器等小工具 |
+| `src/test/scala/bus/amba/` | 综合前 elaboration 测试 |
+
+<p align="right">(<a href="#top">top</a>)</p>
+
+## NoC组件
+
+`src/main/scala/noc` 目录按“可组合积木”组织：
+
+- **配置与数据模型**（`noc/config`、`noc/data`）：`NoCConfig`、flit 头字段定义、packet/flit 工具。
+- **拓扑结构**（`noc/topology`）：Ring、Mesh、Torus、Cube 及可扩展自定义拓扑连接。
+- **路由与仲裁**（`noc/routing`、`noc/arbiter`、`noc/router`）：确定性/自适应路由、VC 分配、交换分配与虚通道管理。
+- **传输与接口集成**（`noc/channel`、`noc/ni`、`noc/system`）：wire/buffer/pipeline 通道、Stream/AXI/TL 网络接口，以及 `MeshNoC`/`RingNoC` 等系统级封装。
+- **示例与演示**（`noc/demo`、`noc/pe`）：用于快速连通验证和集成参考的示例模块。
 
 <p align="right">(<a href="#top">top</a>)</p>
 

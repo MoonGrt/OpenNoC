@@ -26,7 +26,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
   val io = IO(new Bundle {
     val cmd = Flipped(Decoupled(new Axi4Command(p)))
     val rsp = Decoupled(new Axi4Result(p))
-    val axi = new AxiMasterPort(p)
+    val axi = new AXI4Bundle(p)
   })
 
   val idle :: wAddr :: wWaitB :: wRsp :: rAddr :: rWaitR :: rRsp :: Nil = Enum(7)
@@ -38,6 +38,8 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
   val latProt  = Reg(UInt(3.W))
   val latResp  = Reg(UInt(2.W))
   val latRdata = Reg(UInt(p.dataBits.W))
+  val awSent   = RegInit(false.B)
+  val wSent    = RegInit(false.B)
 
   val beatSize = log2Ceil(p.dataBits / 8).U
 
@@ -54,8 +56,8 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
   io.rsp.valid := false.B
   io.rsp.bits  := DontCare
 
-  def addrChan(addr: UInt, prot: UInt): AxiAddrChannel = {
-    val ch = Wire(new AxiAddrChannel(p))
+  def addrChan(addr: UInt, prot: UInt): AXI4BundleA = {
+    val ch = Wire(new AXI4BundleA(p))
     ch.id     := 0.U
     ch.addr   := addr
     ch.len    := 0.U
@@ -66,6 +68,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
     ch.prot   := prot
     ch.qos    := 0.U
     ch.region := 0.U
+    ch.user   := 0.U
     ch
   }
 
@@ -78,6 +81,8 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
         latStrb  := io.cmd.bits.strb
         latProt  := io.cmd.bits.prot
         when(io.cmd.bits.write) {
+          awSent := false.B
+          wSent  := false.B
           state := wAddr
         }.otherwise {
           state := rAddr
@@ -85,13 +90,20 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
       }
     }
     is(wAddr) {
-      io.axi.aw.valid     := true.B
+      io.axi.aw.valid     := !awSent
       io.axi.aw.bits      := addrChan(latAddr, latProt)
-      io.axi.w.valid      := true.B
+      io.axi.w.valid      := !wSent
       io.axi.w.bits.data  := latWdata
       io.axi.w.bits.strb  := latStrb
       io.axi.w.bits.last  := true.B
-      when(io.axi.aw.fire && io.axi.w.fire) {
+      io.axi.w.bits.user  := 0.U
+      when(io.axi.aw.fire) { awSent := true.B }
+      when(io.axi.w.fire)  { wSent  := true.B }
+
+      // AXI channels are independent (RocketChip style): allow AW/W to complete in different cycles.
+      when((awSent || io.axi.aw.fire) && (wSent || io.axi.w.fire)) {
+        awSent := false.B
+        wSent  := false.B
         state := wWaitB
       }
     }
@@ -120,6 +132,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
     is(rWaitR) {
       io.axi.r.ready := true.B
       when(io.axi.r.fire) {
+        assert(io.axi.r.bits.last, "Axi4SingleBeatMasterHost expects single-beat responses with RLAST")
         latRdata := io.axi.r.bits.data
         latResp  := io.axi.r.bits.resp
         state    := rRsp
@@ -137,7 +150,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
 }
 
 object Axi4Host {
-  def tieOffMasterIdle(m: AxiMasterPort): Unit = {
+  def tieOffMasterIdle(m: AXI4Bundle): Unit = {
     m.aw.valid := false.B
     m.aw.bits  := DontCare
     m.w.valid  := false.B

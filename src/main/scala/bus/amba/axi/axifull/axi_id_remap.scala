@@ -9,8 +9,8 @@ class AxiIdRemap(pIn: AxiParams, pOut: AxiParams) extends Module {
   require(pIn.addrBits == pOut.addrBits && pIn.dataBits == pOut.dataBits)
   require(pOut.idBits <= pIn.idBits)
   val io = IO(new Bundle {
-    val in  = Flipped(new AxiMasterPort(pIn))
-    val out = new AxiMasterPort(pOut)
+    val in  = Flipped(new AXI4Bundle(pIn))
+    val out = new AXI4Bundle(pOut)
   })
 
   io.out.aw.valid := io.in.aw.valid

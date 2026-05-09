@@ -38,6 +38,7 @@
     <li><a href="#about-the-project">About</a></li>
     <li><a href="#build--test">Build &amp; test</a></li>
     <li><a href="#layout">Source layout</a></li>
+    <li><a href="#noc-components">NoC components</a></li>
     <li><a href="#command-style-masters">Command-style masters</a></li>
     <li><a href="#simulation">Simulation</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
@@ -58,6 +59,7 @@ OpenNoC is a small **Chisel 7** library of on-chip interconnect pieces. The focu
 - **AXI4 / AXI4-Lite**: bundles, simple register slaves, crossbar (1:1), ID remap, stream FIFO, bridges (e.g. AXI-Lite → APB, AXI-Lite → AXI4 single-beat master).
 - **APB**: directed master/slave IO, decoder, register slave, example subsystem.
 - **AHB**: register slave and stubs for larger fabric (work in progress).
+- **NoC** (`src/main/scala/noc`): reusable NoC components including topology, routing, router/switch, channel and NI blocks.
 - **Other** (`fabric`, `wishbone`, `tilelink`, `avalon`, …): minimal stubs so the repo compiles as one library; expand as needed.
 
 <p align="right">(<a href="#top">top</a>)</p>
@@ -79,11 +81,24 @@ Tests use **elaboration only** (`ChiselStage.emitCHIRRTL`) so they do not requir
 
 | Path | Role |
 |------|------|
-| `src/main/scala/amba/axi/` | AXI4, AXI-Lite, AXI-Stream, bridges, `host/` command masters |
-| `src/main/scala/amba/apb/` | APB IO, slaves, decoder, `ApbMasterHost` |
-| `src/main/scala/amba/ahb/` | AHB IO and register slave |
-| `src/main/scala/util/` | Small helpers (queues, counters, …) |
-| `src/test/scala/amba/` | Elaboration tests |
+| `src/main/scala/bus/amba/axi/` | AXI4, AXI-Lite, AXI-Stream, bridges, `host/` command masters |
+| `src/main/scala/bus/amba/apb/` | APB IO, slaves, decoder, `ApbMasterHost` |
+| `src/main/scala/bus/amba/ahb/` | AHB IO and register slave |
+| `src/main/scala/noc/` | NoC blocks: flit/packet, routing, topology, router/switch, NI and system examples |
+| `src/main/scala/bus/util/` | Small helpers (queues, counters, …) |
+| `src/test/scala/bus/amba/` | Elaboration tests |
+
+<p align="right">(<a href="#top">top</a>)</p>
+
+## NoC components
+
+The NoC code in `src/main/scala/noc` is organized as composable building blocks:
+
+- **Config & data model** (`noc/config`, `noc/data`): `NoCConfig`, flit header layout, packet/flit helpers.
+- **Topology** (`noc/topology`): Ring, Mesh, Torus, Cube and custom topology wiring.
+- **Routing & arbitration** (`noc/routing`, `noc/arbiter`, `noc/router`): deterministic/adaptive routing, VC allocator, switch allocator, virtual channel handling.
+- **Transport & integration** (`noc/channel`, `noc/ni`, `noc/system`): wire/buffer/pipeline channels, stream/AXI/TL NIs, and complete systems such as `MeshNoC`/`RingNoC`.
+- **Examples** (`noc/demo`, `noc/pe`): generation/demo modules for quick bring-up and integration testing.
 
 <p align="right">(<a href="#top">top</a>)</p>
 

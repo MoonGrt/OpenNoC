@@ -7,7 +7,7 @@ import chisel3.util._
 /** Inert AXI4 slave port. */
 class AxiSlaveShell(p: AxiParams) extends Module {
   val io = IO(new Bundle {
-    val axi = new AxiSlavePort(p)
+    val axi = new AXI4SlaveBundle(p)
   })
   io.axi.aw.ready := false.B
   io.axi.w.ready  := false.B

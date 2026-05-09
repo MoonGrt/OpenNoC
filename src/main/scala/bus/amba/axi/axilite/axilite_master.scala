@@ -7,7 +7,7 @@ import chisel3.util._
 /** Minimal AXI4-Lite master port holder; tie-offs for integration tests. */
 class AxiLiteMasterShell(p: AxiLiteParams) extends Module {
   val io = IO(new Bundle {
-    val axi = new AxiLiteMasterPort(p)
+    val axi = new AXI4LiteBundle(p)
   })
   io.axi.aw.valid := false.B
   io.axi.aw.bits  := DontCare

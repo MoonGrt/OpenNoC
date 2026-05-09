@@ -33,7 +33,7 @@ class AxiLiteMasterHost(p: AxiLiteParams) extends Module {
   val io = IO(new Bundle {
     val cmd = Flipped(Decoupled(new AxiLiteCommand(p)))
     val rsp = Decoupled(new AxiLiteResult(p))
-    val axi = new AxiLiteMasterPort(p)
+    val axi = new AXI4LiteBundle(p)
   })
 
   val idle :: wAddr :: wWaitB :: wRsp :: rAddr :: rWaitR :: rRsp :: Nil = Enum(7)
@@ -45,6 +45,8 @@ class AxiLiteMasterHost(p: AxiLiteParams) extends Module {
   val latProt  = Reg(UInt(3.W))
   val latResp  = Reg(UInt(2.W))
   val latRdata = Reg(UInt(p.dataBits.W))
+  val awSent   = RegInit(false.B)
+  val wSent    = RegInit(false.B)
 
   io.axi.aw.valid := false.B
   io.axi.aw.bits  := DontCare
@@ -68,6 +70,8 @@ class AxiLiteMasterHost(p: AxiLiteParams) extends Module {
         latStrb  := io.cmd.bits.strb
         latProt  := io.cmd.bits.prot
         when(io.cmd.bits.write) {
+          awSent := false.B
+          wSent  := false.B
           state := wAddr
         }.otherwise {
           state := rAddr
@@ -75,13 +79,19 @@ class AxiLiteMasterHost(p: AxiLiteParams) extends Module {
       }
     }
     is(wAddr) {
-      io.axi.aw.valid       := true.B
+      io.axi.aw.valid       := !awSent
       io.axi.aw.bits.addr   := latAddr
       io.axi.aw.bits.prot   := latProt
-      io.axi.w.valid        := true.B
+      io.axi.w.valid        := !wSent
       io.axi.w.bits.data    := latWdata
       io.axi.w.bits.strb    := latStrb
-      when(io.axi.aw.fire && io.axi.w.fire) {
+      when(io.axi.aw.fire) { awSent := true.B }
+      when(io.axi.w.fire)  { wSent  := true.B }
+
+      // AXI channels are independent (RocketChip style): allow AW/W to complete in different cycles.
+      when((awSent || io.axi.aw.fire) && (wSent || io.axi.w.fire)) {
+        awSent := false.B
+        wSent  := false.B
         state := wWaitB
       }
     }
@@ -128,7 +138,7 @@ class AxiLiteMasterHost(p: AxiLiteParams) extends Module {
 }
 
 object AxiLiteHost {
-  def tieOffMasterIdle(m: AxiLiteMasterPort): Unit = {
+  def tieOffMasterIdle(m: AXI4LiteBundle): Unit = {
     m.aw.valid := false.B
     m.aw.bits  := DontCare
     m.w.valid  := false.B
@@ -139,7 +149,7 @@ object AxiLiteHost {
     m.r.ready  := true.B
   }
 
-  def tieOffSlaveIdle(s: AxiLiteSlavePort): Unit = {
+  def tieOffSlaveIdle(s: AXI4LiteSlaveBundle): Unit = {
     s.aw.ready := false.B
     s.w.ready  := false.B
     s.b.valid  := false.B
