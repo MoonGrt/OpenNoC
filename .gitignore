@@ -9,6 +9,7 @@ target
 verification
 project/project
 project/target
+*.sv
 
 ### XilinxISE template
 # intermediate build files

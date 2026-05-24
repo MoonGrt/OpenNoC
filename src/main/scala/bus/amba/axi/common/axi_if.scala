@@ -43,7 +43,7 @@ class AXI4BundleR(val p: AxiParams) extends Bundle {
 }
 
 /** RocketChip-style AXI4 master bundle (manager-facing signals). */
-class AXI4Bundle(val p: AxiParams) extends Bundle {
+class AXI4MasterBundle(val p: AxiParams) extends Bundle {
   val aw = Decoupled(new AXI4BundleA(p))
   val w  = Decoupled(new AXI4BundleW(p))
   val b  = Flipped(Decoupled(new AXI4BundleB(p)))
@@ -65,5 +65,5 @@ class AxiAddrChannel(p: AxiParams) extends AXI4BundleA(p)
 class AxiDataWriteChannel(p: AxiParams) extends AXI4BundleW(p)
 class AxiWriteRespChannel(p: AxiParams) extends AXI4BundleB(p)
 class AxiDataReadChannel(p: AxiParams) extends AXI4BundleR(p)
-class AxiMasterPort(p: AxiParams) extends AXI4Bundle(p)
+class AxiMasterPort(p: AxiParams) extends AXI4MasterBundle(p)
 class AxiSlavePort(p: AxiParams) extends AXI4SlaveBundle(p)

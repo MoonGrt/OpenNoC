@@ -10,7 +10,7 @@ class AxiLiteToAxi4(pLite: AxiLiteParams, pFull: AxiParams) extends Module {
   require(pLite.addrBits == pFull.addrBits && pLite.dataBits == pFull.dataBits)
   val io = IO(new Bundle {
     val lite = new AXI4LiteSlaveBundle(pLite)
-    val full = new AXI4Bundle(pFull)
+    val full = new AXI4MasterBundle(pFull)
   })
 
   val id = 0.U(pFull.idBits.W)

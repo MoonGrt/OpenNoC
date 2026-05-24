@@ -165,12 +165,7 @@ class Axi4Ram(p: AxiParams, depthWords: Int = 1024) extends Module {
  * Generate SystemVerilog sources
  */
 object Axi4Ram extends App {
-  val p = AxiParams(
-    addrBits = 32,
-    dataBits = 32,
-    idBits   = 4
-  )
-
+  val p = AxiParams(addrBits = 32, dataBits = 32, idBits = 4)
   val firtoolOptions = Array(
     "--lowering-options=" + List(
       // make yosys happy
@@ -191,7 +186,7 @@ class Axi4RamExample extends Module {
   private val slavePort = AXI4SlavePortParameters(
     slaves = Seq(
       AXI4SlaveParameters(
-        address = Seq(AddressSet(base = 0, size = 1024)),
+        address = Seq(AddressSet(base = 0, mask = 0xffff)),
         supportsWrite = TransferSizes(1, 4),
         supportsRead = TransferSizes(1, 4)
       )

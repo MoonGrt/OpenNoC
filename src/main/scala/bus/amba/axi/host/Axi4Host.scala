@@ -26,7 +26,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
   val io = IO(new Bundle {
     val cmd = Flipped(Decoupled(new Axi4Command(p)))
     val rsp = Decoupled(new Axi4Result(p))
-    val axi = new AXI4Bundle(p)
+    val axi = new AXI4MasterBundle(p)
   })
 
   val idle :: wAddr :: wWaitB :: wRsp :: rAddr :: rWaitR :: rRsp :: Nil = Enum(7)
@@ -150,7 +150,7 @@ class Axi4SingleBeatMasterHost(p: AxiParams) extends Module {
 }
 
 object Axi4Host {
-  def tieOffMasterIdle(m: AXI4Bundle): Unit = {
+  def tieOffMasterIdle(m: AXI4MasterBundle): Unit = {
     m.aw.valid := false.B
     m.aw.bits  := DontCare
     m.w.valid  := false.B

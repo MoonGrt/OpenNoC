@@ -3,7 +3,6 @@ package bus.demo
 import bus.amba.axi.common._
 import chisel3._
 import chisel3.util._
-import chisel3.util.experimental.loadMemoryFromFileInline
 
 /**
   * AXI4 ROM slave with optional file initialization.
@@ -13,6 +12,7 @@ import chisel3.util.experimental.loadMemoryFromFileInline
   */
 class Axi4Rom(p: AxiParams, depthWords: Int = 1024, initFile: String = "") extends Module {
   require(depthWords > 1, "depthWords must be greater than 1")
+  require((p.dataBits % 8) == 0, "AXI dataBits must be byte aligned")
 
   val io = IO(new Bundle {
     val axi = new AXI4SlaveBundle(p)
@@ -26,6 +26,7 @@ class Axi4Rom(p: AxiParams, depthWords: Int = 1024, initFile: String = "") exten
   private val depthBits = log2Ceil(depthWords)
   private val sizeMatch = log2Ceil(dataBytes).U(3.W)
 
+  import chisel3.util.experimental.loadMemoryFromFileInline
   private val mem = Mem(depthWords, UInt(p.dataBits.W))
   if (initFile.nonEmpty) {
     loadMemoryFromFileInline(mem, initFile)
@@ -132,6 +133,9 @@ class Axi4Rom(p: AxiParams, depthWords: Int = 1024, initFile: String = "") exten
   }
 }
 
+/**
+ * Generate SystemVerilog sources
+ */
 object Axi4Rom extends App {
   val p = AxiParams(addrBits = 32, dataBits = 32, idBits = 4)
   val firtoolOptions = Array(

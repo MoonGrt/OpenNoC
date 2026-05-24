@@ -4,17 +4,6 @@ import bus.amba.axi.common._
 import chisel3._
 import chisel3.util._
 
-/** 1:1 link between an AXI master and an AXI slave. */
-class AxiCrossbar11(p: AxiParams) extends Module {
-  private val impl = Module(new AxiCrossbar(p, nMasters = 1, slaveAddress = Seq(AddressSet(0, BigInt(1) << p.addrBits))))
-  val io = IO(new Bundle {
-    val fromMaster = new AXI4SlaveBundle(p)
-    val toSlave    = new AXI4Bundle(p)
-  })
-  impl.io.fromMasters(0) <> io.fromMaster
-  io.toSlave <> impl.io.toSlaves(0)
-}
-
 /**
   * AXI4 crossbar with multiple masters/slaves.
   *
@@ -36,29 +25,36 @@ class AxiCrossbar(
 
   val io = IO(new Bundle {
     val fromMasters = Vec(nMasters, new AXI4SlaveBundle(p))
-    val toSlaves    = Vec(nSlaves, new AXI4Bundle(p))
+    val toSlaves    = Vec(nSlaves, new AXI4MasterBundle(p))
   })
 
   private def hit(addr: UInt, as: AddressSet): Bool =
     addr >= as.base.U(p.addrBits.W) && addr <= as.max.U(p.addrBits.W)
 
-  def choose(req: Vec[Bool], last: UInt, policy: AxiArbiterPolicy): (Bool, UInt) = {
+  def choose(
+    req: Vec[Bool],
+    last: UInt,
+    policy: AxiArbiterPolicy
+  ): (Bool, UInt) = {
     val valid = req.asUInt.orR
-    val idx = Wire(UInt(mW.W))
+    val idx   = Wire(UInt(mW.W))
     idx := 0.U
     policy match {
       case AxiArbiterPolicy.FixedPriority =>
         idx := PriorityEncoder(req)
       case AxiArbiterPolicy.RoundRobin =>
-        val found = Wire(Bool())
-        found := false.B
+        var found = false.B
         for (off <- 1 to nMasters) {
           val raw = last + off.U
-          val cand = Mux(raw >= nMasters.U, raw - nMasters.U, raw)(mW - 1, 0)
+          val cand = Mux(
+            raw >= nMasters.U,
+            raw - nMasters.U,
+            raw
+          )(mW - 1, 0)
           when(!found && req(cand)) {
             idx := cand
-            found := true.B
           }
+          found = found || req(cand)
         }
     }
     (valid, idx)

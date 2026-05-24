@@ -109,14 +109,23 @@ object AxiMath {
 }
 
 /** Minimal AddressSet compatible with AXI parameter checks. */
-case class AddressSet(base: BigInt, size: BigInt) {
-  require(base >= 0 && size > 0, s"invalid AddressSet(base=$base, size=$size)")
-  require((base % size) == 0, s"base ($base) must align to size ($size)")
+case class AddressSet(base: BigInt, mask: BigInt) {
+  // Forbid misaligned base address (and empty sets)
+  require ((base & mask) == 0, s"Mis-aligned AddressSets are forbidden, got: ${this.toString}")
+  require (base >= 0, s"AddressSet negative base is ambiguous: $base")
 
-  def finite: Boolean = true
-  def max: BigInt = base + size - 1
-  def alignment: BigInt = size
-  def overlaps(x: AddressSet): Boolean = !(max < x.base || x.max < base)
+  // overlap iff bitwise: both care (~mask0 & ~mask1) => both equal (base0=base1)
+  def overlaps(x: AddressSet) = (~(mask | x.mask) & (base ^ x.base)) == 0
+  // contains iff bitwise: x.mask => mask && contains(x.base)
+  def contains(x: AddressSet) = ((x.mask | (base ^ x.base)) & ~mask) == 0
+
+  // The number of bytes to which the manager must be aligned
+  def alignment = ((mask + 1) & ~mask)
+  // Is this a contiguous memory range
+  def contiguous = alignment == mask+1
+
+  def finite = mask >= 0
+  def max = { require (finite, "Max cannot be calculated on infinite mask"); base | mask }
 }
 
 case class TransferSizes(min: Int, max: Int) {
@@ -398,7 +407,7 @@ case object AxiSlavePortKey extends AxiField[AXI4SlavePortParameters](
   AXI4SlavePortParameters(
     slaves = Seq(
       AXI4SlaveParameters(
-        address = Seq(AddressSet(base = 0, size = 4096)),
+        address = Seq(AddressSet(base = 0, mask = 0xffff)),
         supportsWrite = TransferSizes(1, 4),
         supportsRead = TransferSizes(1, 4)
       )
@@ -430,7 +439,7 @@ class BaseAxiConfig extends AxiConfig((_, _, _) => {
     AXI4SlavePortParameters(
       slaves = Seq(
         AXI4SlaveParameters(
-          address = Seq(AddressSet(base = 0, size = 4096)),
+          address = Seq(AddressSet(base = 0, mask = 0xffff)),
           supportsWrite = TransferSizes(1, 4),
           supportsRead = TransferSizes(1, 4)
         )

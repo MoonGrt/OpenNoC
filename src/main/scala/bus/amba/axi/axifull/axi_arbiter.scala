@@ -14,8 +14,8 @@ object AxiArbiterPolicy {
 class AxiArbiter2(p: AxiParams, policy: AxiArbiterPolicy = AxiArbiterPolicy.RoundRobin) extends Module {
   private val impl = Module(new AxiArbiterN(p, 2, policy))
   val io = IO(new Bundle {
-    val in  = Vec(2, Flipped(new AXI4Bundle(p)))
-    val out = new AXI4Bundle(p)
+    val in  = Vec(2, Flipped(new AXI4MasterBundle(p)))
+    val out = new AXI4MasterBundle(p)
   })
   impl.io.in <> io.in
   io.out <> impl.io.out
@@ -32,8 +32,8 @@ class AxiArbiterN(p: AxiParams, nInputs: Int, policy: AxiArbiterPolicy = AxiArbi
   private val idxW = log2Ceil(nInputs max 2)
 
   val io = IO(new Bundle {
-    val in  = Vec(nInputs, Flipped(new AXI4Bundle(p)))
-    val out = new AXI4Bundle(p)
+    val in  = Vec(nInputs, Flipped(new AXI4MasterBundle(p)))
+    val out = new AXI4MasterBundle(p)
   })
 
   val wBusy = RegInit(false.B)

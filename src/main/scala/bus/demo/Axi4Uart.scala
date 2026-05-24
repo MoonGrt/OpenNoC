@@ -113,6 +113,21 @@ class Axi4Uart(p: AxiParams) extends Module {
   when(io.axi.r.fire) { rValid := false.B }
 }
 
+/**
+ * Generate SystemVerilog sources
+ */
+object Axi4Uart extends App {
+  val p = AxiParams(addrBits = 32, dataBits = 32, idBits = 4)
+  val firtoolOptions = Array(
+    "--lowering-options=" + List(
+      "disallowLocalVariables",
+      "disallowPackedArrays",
+      "locationInfoStyle=wrapInAtSquareBracket"
+    ).reduce(_ + "," + _)
+  )
+  _root_.circt.stage.ChiselStage.emitSystemVerilogFile(new Axi4Uart(p), args, firtoolOptions)
+}
+
 /** Minimal Axi4Uart usage example with command host. */
 class Axi4UartExample extends Module {
   private implicit val params: AxiParameters = new BaseAxiConfig
@@ -155,12 +170,10 @@ class Axi4UartExample extends Module {
       when(host.io.rsp.fire) { st := sDone }
     }
   }
-
   io.sent := (st === sDone)
 }
 
-object Axi4Uart extends App {
-  val p = AxiParams(addrBits = 32, dataBits = 32, idBits = 4)
+object Axi4UartExample extends App {
   val firtoolOptions = Array(
     "--lowering-options=" + List(
       "disallowLocalVariables",
@@ -168,5 +181,5 @@ object Axi4Uart extends App {
       "locationInfoStyle=wrapInAtSquareBracket"
     ).reduce(_ + "," + _)
   )
-  _root_.circt.stage.ChiselStage.emitSystemVerilogFile(new Axi4Uart(p), args, firtoolOptions)
+  _root_.circt.stage.ChiselStage.emitSystemVerilogFile(new Axi4UartExample, args, firtoolOptions)
 }

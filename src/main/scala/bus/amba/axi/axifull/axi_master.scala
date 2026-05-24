@@ -7,7 +7,7 @@ import chisel3.util._
 /** Inert AXI4 master port (drive externally or extend). */
 class AxiMasterShell(p: AxiParams) extends Module {
   val io = IO(new Bundle {
-    val axi = new AXI4Bundle(p)
+    val axi = new AXI4MasterBundle(p)
   })
   io.axi.aw.valid := false.B
   io.axi.aw.bits  := DontCare
