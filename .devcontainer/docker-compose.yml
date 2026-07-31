@@ -1,0 +1,15 @@
+services:
+  OpenNoC:
+    image: opennoc:latest
+    container_name: opennoc-dev
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    hostname: dev
+    working_dir: /workspace/OpenNoC
+    command: sleep infinity
+    environment:
+      DISPLAY: ${DISPLAY:-}
+    volumes:
+      - ..:/workspace/OpenNoC
+      - /mnt/wslg/.X11-unix:/tmp/.X11-unix

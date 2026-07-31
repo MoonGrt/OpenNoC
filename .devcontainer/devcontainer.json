@@ -1,0 +1,12 @@
+{
+  "name": "OpenNoC (Ubuntu 22.04)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "OpenNoC",
+  "workspaceFolder": "/workspace/OpenNoC",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": ["scala-lang.scala", "scalameta.metals", "mshr-h.veriloghdl", "ms-vscode.cpptools"]
+    }
+  }
+}

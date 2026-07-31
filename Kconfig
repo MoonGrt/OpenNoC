@@ -1,0 +1,90 @@
+mainmenu "OpenNoC Configuration Menu"
+
+choice
+  prompt "Backend"
+  default VERILOG
+config VERILOG
+  bool "Verilog/SystemVerilog"
+config CHISEL
+  bool "Chisel"
+config SPINAL
+  bool "SpinalHDL"
+endchoice
+
+
+menu "NoC Configration"
+choice
+  prompt "Topology"
+  default MESH
+config MESH
+  bool "Parameterized Mesh"
+config RING
+  bool "4 node Ring"
+endchoice
+config DATA_WIDTH
+  int "Data width"
+  range 32 128
+  default 32
+config MESH_X
+  int "Mesh width"
+  depends on MESH
+  range 1 8
+  default 2
+config MESH_Y
+  int "Mesh height"
+  depends on MESH
+  range 1 8
+  default 2
+config NODE_ID_WIDTH
+  int "Node ID width"
+  range 2 8
+  default 2
+config VC_NUM
+  int "Virtual channels"
+  range 1 4
+  default 1
+config BUFFER_DEPTH
+  int "Input buffer depth"
+  range 1 16
+  default 2
+endmenu
+
+
+menu "Test Configration"
+config TEST_PACKETS
+  int "Random regression packet count"
+  range 4 100000
+  default 200
+config TEST_SEED
+  int "Random regression seed"
+  range 1 2147483647
+  default 1
+endmenu
+
+
+menu "Trace & Debug"
+config WAVE
+  bool "Generate RTL VCD waveform"
+  default y
+config WAVE_START
+  int "First RTL cycle written to VCD"
+  depends on WAVE
+  default 0
+config WAVE_END
+  int "Cycle after the last RTL cycle written to VCD"
+  depends on WAVE
+  default 100000
+endmenu
+
+
+menu "Build Options"
+choice
+  prompt "Scala Build Tool"
+  depends on CHISEL || SPINAL
+  default MILL
+config SBT
+  bool "sbt"
+config MILL
+  bool "mill"
+endchoice
+endmenu

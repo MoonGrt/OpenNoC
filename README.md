@@ -1,4 +1,3 @@
-**English | [简体中文](README_cn.md)**
 <div id="top"></div>
 
 [![Contributors][contributors-shield]][contributors-url]
@@ -36,7 +35,7 @@
   <summary>Contents</summary>
   <ol>
     <li><a href="#about-the-project">About</a></li>
-    <li><a href="#build--test">Build &amp; test</a></li>
+    <li><a href="#build--run">Build &amp; run</a></li>
     <li><a href="#layout">Source layout</a></li>
     <li><a href="#noc-components">NoC components</a></li>
     <li><a href="#command-style-masters">Command-style masters</a></li>
@@ -54,26 +53,37 @@
 
 ## About The Project
 
-OpenNoC is a small **Chisel 7** library of on-chip interconnect pieces. The focus is **AMBA-style** ports and glue logic you can instantiate next to your own modules.
+OpenNoC is a portable 2x2 network-on-chip with SystemVerilog, Chisel and SpinalHDL backends. All three expose the same four-source/four-sink packet interface and run the same randomized regression.
 
 - **AXI4 / AXI4-Lite**: bundles, simple register slaves, crossbar (1:1), ID remap, stream FIFO, bridges (e.g. AXI-Lite → APB, AXI-Lite → AXI4 single-beat master).
 - **APB**: directed master/slave IO, decoder, register slave, example subsystem.
 - **AHB**: register slave and stubs for larger fabric (work in progress).
-- **NoC** (`src/main/scala/noc`): reusable NoC components including topology, routing, router/switch, channel and NI blocks.
+- **NoC** (`hw/chisel/src/main/scala/noc`): reusable NoC components including topology, routing, router/switch, channel and NI blocks.
 - **Other** (`fabric`, `wishbone`, `tilelink`, `avalon`, …): minimal stubs so the repo compiles as one library; expand as needed.
 
 <p align="right">(<a href="#top">top</a>)</p>
 
-## Build & test
+## Build & run
 
-Requires **JDK 17+** and [sbt](https://www.scala-sbt.org/).
+Requires JDK 17+, Mill or SBT, and Verilator 4.216.
 
 ```bash
-sbt compile
-sbt test
+./scripts/setup.sh check
+make opennoc_verilog_defconfig  # or opennoc_chisel/spinal_defconfig
+make run
+make run-all
+make bus-run
+make lint-all
+make parity-check
+make menuconfig
 ```
 
-Tests use **elaboration only** (`ChiselStage.emitCHIRRTL`) so they do not require Verilator.
+The random source/sink regression verifies packet ordering, payload, source,
+head-latched destination, `last`, loss/duplication, and signal stability under
+output backpressure. `make run-all` runs seeds 1, 7, and 12345 on every
+backend, followed by the shared RAM/byte-strobe/UART Bus regression.
+`make lint-all` checks 1x1, 2x1, and 2x2 elaboration plus standalone native
+library components. Packet count, seed, and tracing are configurable.
 
 <p align="right">(<a href="#top">top</a>)</p>
 
@@ -81,18 +91,19 @@ Tests use **elaboration only** (`ChiselStage.emitCHIRRTL`) so they do not requir
 
 | Path | Role |
 |------|------|
-| `src/main/scala/bus/amba/axi/` | AXI4, AXI-Lite, AXI-Stream, bridges, `host/` command masters |
-| `src/main/scala/bus/amba/apb/` | APB IO, slaves, decoder, `ApbMasterHost` |
-| `src/main/scala/bus/amba/ahb/` | AHB IO and register slave |
-| `src/main/scala/noc/` | NoC blocks: flit/packet, routing, topology, router/switch, NI and system examples |
-| `src/main/scala/bus/util/` | Small helpers (queues, counters, …) |
-| `src/test/scala/bus/amba/` | Elaboration tests |
+| `hw/verilog/` | SystemVerilog backend and portable bus shells |
+| `hw/chisel/` | Chisel backend, NoC components and bus library |
+| `hw/spinal/` | Native SpinalHDL backend |
+| `hw/common/sim/` | Shared Mesh and Bus Verilator regressions |
+| `scripts/rtl/` | Backend elaboration recipes |
+| `configs/`, `Kconfig` | Reproducible configurations |
+| `tools/kconfig/` | Project-local menuconfig tools |
 
 <p align="right">(<a href="#top">top</a>)</p>
 
 ## NoC components
 
-The NoC code in `src/main/scala/noc` is organized as composable building blocks:
+The NoC code in `hw/chisel/src/main/scala/noc` is organized as composable building blocks:
 
 - **Config & data model** (`noc/config`, `noc/data`): `NoCConfig`, flit header layout, packet/flit helpers.
 - **Topology** (`noc/topology`): Ring, Mesh, Torus, Cube and custom topology wiring.

@@ -1,0 +1,161 @@
+package noc.ni
+
+import chisel3._
+import chisel3.util.{Decoupled, Queue, switch, is}
+import noc.data.{Flit, Packet}
+import noc.config.NoCConfig
+
+/**
+ * StreamNI - Stream network interface
+ * Provides simple stream interface, packs data stream into flits for transmission
+ *
+ * @param config NoC configuration
+ * @param nodeId Node ID
+ */
+class StreamNI(config: NoCConfig, nodeId: Int) extends NetworkInterface(config, nodeId) {
+  import config._
+
+  val io = IO(new Bundle {
+    // Inherit base interface
+    val routerLink = new Bundle {
+      val out = Decoupled(new Flit(flitConfig))
+      val in = Flipped(Decoupled(new Flit(flitConfig)))
+    }
+    val nodeId = Output(UInt(config.nodeIdWidth.W))
+
+    // Stream interface
+    val destId = Input(UInt(config.nodeIdWidth.W))  // Destination node ID
+    val streamIn = Flipped(Decoupled(UInt(config.dataWidth.W)))
+    val streamOut = Decoupled(UInt(config.dataWidth.W))
+  })
+
+  io.nodeId := nodeId.U(config.nodeIdWidth.W)
+
+  // Transmit side: pack data stream into flits
+  val sendQueue = Module(new Queue(new Bundle {
+    val data = UInt(config.dataWidth.W)
+    val dest = UInt(config.nodeIdWidth.W)
+  }, config.bufferDepth))
+  sendQueue.io.enq.valid := io.streamIn.valid
+  sendQueue.io.enq.bits.data := io.streamIn.bits
+  sendQueue.io.enq.bits.dest := io.destId
+  io.streamIn.ready := sendQueue.io.enq.ready
+
+  val sendState = RegInit(0.U(2.W))  // 0: idle, 1: sending head, 2: sending body/tail
+  val sendCounter = RegInit(0.U(8.W))
+  val sendDestId = Reg(UInt(config.nodeIdWidth.W))
+
+  io.routerLink.out.valid := false.B
+  io.routerLink.out.bits := DontCare
+  sendQueue.io.deq.ready := false.B
+
+  switch(sendState) {
+    is(0.U) {
+      // Wait for data
+      when(sendQueue.io.deq.valid) {
+        // Send head flit
+        io.routerLink.out.valid := true.B
+        io.routerLink.out.bits := Flit.head(
+          flitConfig,
+          vcId = 0.U,
+          nodeId.U,
+          sendQueue.io.deq.bits.dest,
+          sendQueue.io.deq.bits.data
+        )
+        sendQueue.io.deq.ready := io.routerLink.out.ready
+        when(io.routerLink.out.fire) {
+          sendState := 1.U
+          sendDestId := sendQueue.io.deq.bits.dest
+          sendCounter := 1.U
+        }
+      }
+    }
+    is(1.U) {
+      // Send body flit or tail flit
+      when(sendQueue.io.deq.valid) {
+        val isLast = sendCounter === (bufferDepth - 1).U || !sendQueue.io.deq.valid
+        io.routerLink.out.valid := true.B
+        when(isLast) {
+          io.routerLink.out.bits := Flit.tail(flitConfig, data = sendQueue.io.deq.bits.data)
+        }.otherwise {
+          io.routerLink.out.bits := Flit.body(flitConfig, data = sendQueue.io.deq.bits.data)
+        }
+        sendQueue.io.deq.ready := io.routerLink.out.ready
+        when(io.routerLink.out.fire) {
+          when(isLast) {
+            sendState := 0.U
+            sendCounter := 0.U
+          }.otherwise {
+            sendCounter := sendCounter + 1.U
+          }
+        }
+      }
+    }
+  }
+
+  // Receive side: unpack flits into data stream
+  val recvQueue = Module(new Queue(UInt(config.dataWidth.W), config.bufferDepth))
+  val recvState = RegInit(0.U(2.W))  // 0: waiting head, 1: receiving
+
+  io.routerLink.in.ready := false.B
+  recvQueue.io.enq.valid := false.B
+  recvQueue.io.enq.bits := DontCare
+
+  switch(recvState) {
+    is(0.U) {
+      // Wait for head flit
+      when(io.routerLink.in.valid && io.routerLink.in.bits.isHead) {
+        recvQueue.io.enq.valid := true.B
+        recvQueue.io.enq.bits := io.routerLink.in.bits.data
+        io.routerLink.in.ready := recvQueue.io.enq.ready
+        when(io.routerLink.in.fire) {
+          when(io.routerLink.in.bits.isTail) {
+            // Single-flit packet
+            recvState := 0.U
+          }.otherwise {
+            recvState := 1.U
+          }
+        }
+      }
+    }
+    is(1.U) {
+      // Receive body flit or tail flit
+      when(io.routerLink.in.valid) {
+        recvQueue.io.enq.valid := true.B
+        recvQueue.io.enq.bits := io.routerLink.in.bits.data
+        io.routerLink.in.ready := recvQueue.io.enq.ready
+        when(io.routerLink.in.fire && io.routerLink.in.bits.isTail) {
+          recvState := 0.U
+        }
+      }
+    }
+  }
+
+  io.streamOut <> recvQueue.io.deq
+}
+
+/**
+ * StreamNIGen - Stream network interface generator
+ *
+ */
+object StreamNIGen extends App {
+  val config = NoCConfig(
+    dataWidth    = 32,
+    vcNum        = 1,  // Single virtual channel
+    bufferDepth  = 4,  // Larger buffer for ring topology
+    nodeIdWidth  = 2,  // Support up to 4 nodes
+    routingType  = "Ring",
+    topologyType = "Ring"
+  )
+
+  val firtoolOptions = Array(
+    "--lowering-options=" + List(
+      // make yosys happy
+      // see https://github.com/llvm/circt/blob/main/docs/VerilogGeneration.md
+      "disallowLocalVariables",
+      "disallowPackedArrays",
+      "locationInfoStyle=wrapInAtSquareBracket"
+    ).reduce(_ + "," + _)
+  )
+  circt.stage.ChiselStage.emitSystemVerilogFile(new StreamNI(config, 0), args, firtoolOptions)
+}
